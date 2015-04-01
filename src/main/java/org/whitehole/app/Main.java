@@ -39,6 +39,7 @@ public class Main {
 	static class Arguments {
 
 		public int port = 80;
+		public String binaryPath = null;
 		
 		public Arguments(String[] args) {
 			for (int a = 0; a < args.length; ++a) {
@@ -49,6 +50,11 @@ public class Main {
 						++a;
 						if (a < args.length)
 							port = Integer.parseInt(args[a]);
+						break;
+					case "--binary-path":
+						++a;
+						if (a < args.length)
+							binaryPath = args[a];
 						break;
 				}
 			}
@@ -68,6 +74,10 @@ public class Main {
 		wac.setParentLoaderPriority(true);
 
 		final ProjectRepository r = new ProjectRepository();
+		
+		if (args.binaryPath != null)
+			r.newProject(args.binaryPath);
+		
 		wac.setAttribute("repository", r);
 
 		server.setHandler(wac);

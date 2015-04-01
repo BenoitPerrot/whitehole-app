@@ -28,34 +28,59 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package org.whitehole.app.model;
-
-import java.util.HashMap;
-import java.util.UUID;
-
-import org.whitehole.infra.json.JsonArray;
-import org.whitehole.infra.json.JsonArrayBuilder;
-
-public class ProjectRepository {
+var DOM = (function () {
+	'use strict';
 	
-	final HashMap<String, Project> _projects = new HashMap<String, Project>();
-	
-	public Project newProject(String binaryPath) {
-		final String id = UUID.randomUUID().toString();
-		final Project p = new Project(id, binaryPath);
-		_projects.put(id, p);
-		return p;
+	return {
+		Builder: class {
+			constructor(root) {
+				this.doc = root.ownerDocument;
+				this.nodes = [root];
+			}
+		 
+			addNode(n, cb) {
+				this.nodes[this.nodes.length - 1].appendChild(n);
+				if (cb)
+					cb(n);
+				return this;
+			}
+		 
+			startElement(tag, properties, cb) {
+				let n;
+		               
+				let l = tag.split(':');
+				if (l[0] === 'svg')
+					n = this.doc.createElementNS('http://www.w3.org/2000/svg', l[1]);
+				else
+					n = this.doc.createElement(tag);
+		                
+				if (properties)
+					Object.keys(properties).forEach(function (k) {
+		                        	n.setAttribute(k, properties[k]);
+					});
+		 
+				if (cb)
+					cb(n);
+				this.nodes.push(n);
+				return this;
+			}
+		 
+			end(cb) {
+				return this.addNode(this.nodes.pop(), cb);
+			}
+		 
+			addElement(tag, properties, cb) {
+				return this.startElement(tag, properties).end(cb);
+			}
+		 
+			addText(text, cb) {
+				return this.addNode(this.doc.createTextNode(text), cb);
+			}
+		 
+			forEach(a, cb) {
+				a.forEach(cb, this);
+				return this;
+			}
+		}
 	}
-	
-	public JsonArray getProjectBriefs() {
-		final JsonArrayBuilder a = new JsonArrayBuilder();
-		_projects.forEach((id, p) -> {
-			a.add(p.toBriefJson());
-		});
-		return a.build();
-	}
-	
-	public Project getProjectById(String id) {
-		return _projects.get(id);
-	}
-}
+} ());

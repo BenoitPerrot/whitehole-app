@@ -1,0 +1,53 @@
+<template id="wh-top-bar">
+  <style>
+
+:host {
+    padding: 0.3em 1em;
+    min-height: 4em;
+
+    background-color: #000;
+    color: #fff;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.left {
+    display: flex;
+    align-items: center;
+}
+
+.left .title {
+    font-size: 20pt;
+    margin-left: 0.5em;
+}
+
+a {
+	text-decoration: none;
+	color: white;
+}
+  </style>
+  <a href=""><div class="left">
+    <img src="/org/whitehole/style/images/logo.svg"/>
+    <span class="title">Whitehole</span>
+  </div></a>
+</template>
+
+<script>
+
+(function () {
+    'use strict';
+
+    let t = document.currentScript.ownerDocument.getElementById('wh-top-bar');
+    document.registerElement(t.id, {
+	prototype: Object.create(HTMLElement.prototype, {
+	    createdCallback: {
+		value: function() {
+		    this.createShadowRoot().appendChild(document.importNode(t.content, true));
+		}
+	    }
+	})
+    });
+} ());
+</script>

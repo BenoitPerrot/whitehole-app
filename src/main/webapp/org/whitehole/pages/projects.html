@@ -1,0 +1,42 @@
+<html>
+
+<head>
+<title>Whitehole</title>
+
+<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+
+<link rel="stylesheet" type="text/css" href="/org/whitehole/style/wh.css"/>
+<link rel="import" href="/org/whitehole/components/wh-top-bar.html">
+
+<script src="/org/whitehole/utils/DOM.js"></script>
+
+</head>
+
+<body>
+<wh-top-bar></wh-top-bar>
+<ul id="projects"></ul>
+
+<script>
+(function () {
+	'use strict';
+	
+	let projects = document.getElementById('projects');
+	
+	fetch('/api/projects')
+		.then(function (r) { return r.json(); })
+		.then(function (projectBriefs) {
+			new DOM.Builder(document.getElementById('projects'))
+				.forEach(projectBriefs, function (projectBrief) {
+					this.startElement('li')
+					.startElement('a', {'href': '/org/whitehole/pages/project.html?id=' + projectBrief.id})
+					.addText(projectBrief.binaryPath)
+					.end()
+					.end();
+				});
+		});
+} ());
+</script>
+
+</body>
+
+</html>
