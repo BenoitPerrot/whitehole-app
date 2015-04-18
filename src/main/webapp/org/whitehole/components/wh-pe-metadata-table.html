@@ -1,0 +1,102 @@
+<template id='wh-pe-metadata-table'>
+<table id="root"></table>
+</template>
+
+<script>
+
+(function (DOM) {
+	'use strict';
+
+	const t = document.currentScript.ownerDocument.getElementById('wh-pe-metadata-table');
+	document.registerElement(t.id, {
+		prototype: Object.create(HTMLElement.prototype, {
+    		createdCallback: {
+				value: function() {
+	    			this.root = this.createShadowRoot();
+	    			this.root.appendChild(document.importNode(t.content, true));
+				}
+    		},
+    		
+			data: {
+				set: function (value) {
+					
+					let b = new DOM.Builder(this.root);
+					function makeRow(p) {
+						const k = p[0], v = p[1];
+						b.startElement('tr').startElement('td').addText(k).end().startElement('td').addText(v).end().end();
+					}
+			
+					const stdF = value.optionalHeader.standardFields;
+					[
+						// COFF header
+						['Time/Date', value.coffHeader.timeDateStamp],
+						// Optional header, standard fields
+						['Magic', stdF.magic],
+						['Major linker version', stdF.majorLinkerVersion],
+						['Minor linker version', stdF.minorLinkerVersion],
+						['Size of code', stdF.sizeOfCode],
+						['Size of initialized data', stdF.sizeOfInitializedData],
+						['Size of uninitialized data', stdF.sizeOfUninitializedData],
+						['Address of entry point', stdF.addressOfEntryPoint],
+						['Base of code', stdF.baseOfCode],
+					].forEach(makeRow);
+			
+					const pe32F = value.optionalHeader.pe32Fields;
+					if (pe32F)
+						[
+							['Base of data', pe32F.baseOfData],
+							['Image base', pe32F.imageBase],
+							['Section alignment', pe32F.sectionAlignment],
+							['File alignment', pe32F.fileAlignment],
+							['Major operating system version', pe32F.majorOperatingSystemVersion],
+							['Minor operating system version', pe32F.minorOperatingSystemVersion],
+							['Major image version', pe32F.majorImageVersion],
+							['Minor image version', pe32F.minorImageVersion],
+							['Major subsystem version', pe32F.majorSubsystemVersion],
+							['Minor subsystem version', pe32F.minorSubsystemVersion],
+							['Win32 version', pe32F.win32VersionValue],
+							['Size of image', pe32F.sizeOfImage],
+							['Size of headers', pe32F.sizeOfHeaders],
+							['Checksum', pe32F.checksum],
+							['Subsystem', pe32F.subsystem],
+							['Dll characteristics', ''], // pe32F.dllCharacteristics,
+							['Size of stack reserve', pe32F.sizeOfStackReserve],
+							['Size of stack commit', pe32F.sizeOfStackCommit],
+							['Size of heap reserve', pe32F.sizeOfHeapReserve],
+							['Size of heap commit', pe32F.sizeOfHeapCommit],
+							['Loader flags', pe32F.loaderFlags],
+							['Number of RVA and sizes', pe32F.numberOfRvaAndSize]
+						].forEach(makeRow);
+					
+					const pe32xF = value.optionalHeader.pe32xFields;
+					if (pe32xF)
+						[
+						 	['Image base', pe32xF.imageBase],
+							['Section alignment', pe32xF.sectionAlignment],
+							['File alignment', pe32xF.fileAlignment],
+							['Major operating system version', pe32xF.majorOperatingSystemVersion],
+							['Minor operating system version', pe32xF.minorOperatingSystemVersion],
+							['Major image version', pe32xF.majorImageVersion],
+							['Minor image version', pe32xF.minorImageVersion],
+							['Major subsystem version', pe32xF.majorSubsystemVersion],
+							['Minor subsystem version', pe32xF.minorSubsystemVersion],
+							['Win32 version', pe32xF.win32VersionValue],
+							['Size of image', pe32xF.sizeOfImage],
+							['Size of headers', pe32xF.sizeOfHeaders],
+							['Checksum', pe32xF.checksum],
+							['Subsystem', pe32xF.subsystem],
+							['Dll characteristics', ''], // pe32F.dllCharacteristics,
+							['Size of stack reserve', pe32xF.sizeOfStackReserve],
+							['Size of stack commit', pe32xF.sizeOfStackCommit],
+							['Size of heap reserve', pe32xF.sizeOfHeapReserve],
+							['Size of heap commit', pe32xF.sizeOfHeapCommit],
+							['Loader flags', pe32xF.loaderFlags],
+							['Number of RVA and sizes', pe32xF.numberOfRvaAndSize]
+						].forEach(makeRow);
+				}
+			}
+		})
+	});
+} (DOM));
+</script>
+</polymer-element>

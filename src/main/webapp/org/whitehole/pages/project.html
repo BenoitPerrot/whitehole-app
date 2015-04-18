@@ -5,16 +5,17 @@
 
 <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
 
+<script src="/org/whitehole/utils/DOM.js"></script>
+
 <link rel="stylesheet" type="text/css" href="/org/whitehole/style/wh.css"/>
 <link rel="import" href="/org/whitehole/components/wh-top-bar.html">
-
-<script src="/org/whitehole/utils/DOM.js"></script>
+<link rel="import" href="/org/whitehole/components/wh-pe-metadata-table.html">
 
 </head>
 
 <body>
-<wh-top-bar></wh-top-bar>
-<div id="content"></div>
+	<wh-top-bar></wh-top-bar>
+	<wh-pe-metadata-table></wh-pe-metadata-table>
 </body>
 
 <script>
@@ -27,36 +28,15 @@
 		q[p[0]] = p[1];
 	});
 	
-	if (q.id !== undefined) {
+	if (q.id)
 		fetch('/api/projects/' + q.id)
 			.then(function (r) { return r.json(); })
 			.then(function (project) {
-				const b = new DOM.Builder(document.getElementById('content'))
-				const h = project.content.pe.header;
-
-				function makeRow(e) {
-					const k = e[0], v = e[1];
-					this.startElement('tr').startElement('td').addText(k).end().startElement('td').addText(v).end().end();
-				}
-				
-				const stdF = h.optionalHeader.standardFields;
-				b.forEach([
-					// COFF header
-					['Time/Date', h.coffHeader.timeDateStamp],
-					// Optional header, standard fields
-					['Magic', stdF.magic],
-					['Major linker version', stdF.majorLinkerVersion],
-					['Minor linker version', stdF.minorLinkerVersion],
-					['Size of code', stdF.sizeOfCode],
-					['Size of initialized data', stdF.sizeOfInitializedData],
-					['Size of uninitialized data', stdF.sizeOfUninitializedData],
-					['Address of entry point', stdF.addressOfEntryPoint],
-					['Base of code', stdF.baseOfCode]
-				], makeRow);
 
 				console.log(project);
+				const t = document.querySelector('wh-pe-metadata-table');
+				t.data = project.content.pe.header;
 			});
-	}
 	
 } ())
 </script>
