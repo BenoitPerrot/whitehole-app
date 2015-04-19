@@ -36,16 +36,17 @@
 		fetch('/api/projects/' + q.id)
 		.then(function(r) { return r.json(); })
 		.then(function(project) {
+			project.entryPoints.sort();
 
 			const pe = project.content.pe;
 
 			const t = document.querySelector('wh-pe-metadata-table');
 			t.data = pe.header;
 
+			const b = new DOM.Builder(document.getElementById('content'));
+
 			// <<
 			if (pe.importTable) {
-				const b = new DOM.Builder(document.getElementById('content'));
-
 				pe.importTable.forEach(function(it) {
 					b.addElement('wh-pe-import-table-entry', {}, function(e) {
 						e.data = it;
@@ -53,6 +54,19 @@
 				});
 			}
 			// >>
+			
+			{
+				b
+				.startElement('h1').addText('Entry Points').end()
+				.startElement('ul');
+				project.entryPoints.forEach(function (p) {
+					b
+					.startElement('li')
+					.addText(p)
+					.end();
+				});
+				b.end();
+			}
 		});
 }())
 </script>

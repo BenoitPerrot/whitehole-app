@@ -33,60 +33,112 @@ package org.whitehole.app.model;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 import org.whitehole.apps.JsonBuilder;
+import org.whitehole.assembly.ia32_x64.control.CallGraphExplorer;
+import org.whitehole.assembly.ia32_x64.control.ControlFlowGraph;
+import org.whitehole.assembly.ia32_x64.dis.Disassembler;
 import org.whitehole.binary.pe.Image;
+import org.whitehole.binary.pe.SectionHeader;
 import org.whitehole.infra.io.LargeByteBuffer;
+import org.whitehole.infra.json.JsonArray;
+import org.whitehole.infra.json.JsonNumber;
 import org.whitehole.infra.json.JsonObject;
 import org.whitehole.infra.json.JsonObjectBuilder;
 
 public class Project {
-	
+
 	private final String _id;
 	private final String _binaryPath;
-	
+
 	public Project(String id, String binaryPath) {
 		_id = id;
 		_binaryPath = binaryPath.replace("\\", "/");
 	}
-	
+
 	public JsonObject toBriefJson() {
 		return new JsonObjectBuilder()
-			.add("id", _id)
-			.add("binaryPath", _binaryPath)
-			.build();
+				.add("id", _id)
+				.add("binaryPath", _binaryPath)
+				.build();
 	}
-	
+
 	public JsonObject toJson() {
 		final JsonObjectBuilder b = new JsonObjectBuilder();
 		b.add("id", _id);
 		b.add("binaryPath", _binaryPath);
-		
+
 		try {
 			final JsonObjectBuilder pe = new JsonObjectBuilder();
 			pe.add("pe", JsonBuilder.toJson(new JsonObjectBuilder(), loadImage()));
+
 			b.add("content", pe);
+			
+			final JsonArray entryPoints = new JsonArray();
+			extractEntryPoints().stream().forEach(p -> entryPoints.add(new JsonNumber(new BigDecimal(p))));
+			b.add("entryPoints", entryPoints);
 		}
-		catch (IOException x) {
+		catch (Exception x) {
 		}
-		
+
 		return b.build();
 	}
-	
+
 	// FIXME: move to some kind of container for Binaries
 	// <<
+	private ArrayList<Long> _entryPoints;
+	
+	public ArrayList<Long> extractEntryPoints() throws Exception {
+		if (_entryPoints == null) {
+			_entryPoints = new ArrayList<Long>();
+
+			final Image lpe = loadImage();
+			final ByteBuffer buffer = loadByteBuffer();
+
+			final long entryPointRVA = lpe.getAddressOfEntryPoint().longValue();
+			// Entry point (relative to image base): Long.toHexString(entryPointRVA))
+			// Entry point (absolute): Long.toHexString(entryPointRVA + imageBase))
+
+			// ep relative to imgb
+			// h.getVA relative to imgb
+			final SectionHeader sh = lpe.findSectionHeaderByRVA(entryPointRVA);
+			if (sh != null) {
+
+				// final long vma = imageBase + sh.getVirtualAddress().toBigInteger().longValue();
+				// Logger.getAnonymousLogger().info("Entry point in section '" + Explorer.getName(sh) + "' starting at VMA 0x" + Long.toHexString(vma));
+
+				final HashMap<Long, ControlFlowGraph> entryPointToControlFlowGraph = new HashMap<>();
+				CallGraphExplorer.explore(new Disassembler(lpe.isPE32x() ? Disassembler.WorkingMode._64BIT : Disassembler.WorkingMode._32BIT), buffer, Image.computeRVAToOffset(sh) + entryPointRVA,
+						entryPointToControlFlowGraph);
+
+				for (final Entry<Long, ControlFlowGraph> e : entryPointToControlFlowGraph.entrySet()) {
+					final ControlFlowGraph g = e.getValue();
+					_entryPoints.add(g.getBasicBlock(g.getEntryVertex()).getEntryPoint());
+				}
+			}
+		}
+
+		return _entryPoints;
+	}
+
 	private Image _lpe;
+
 	public Image loadImage() throws IOException {
 		return loadBinary()._lpe;
 	}
-	
+
 	private ByteBuffer _b;
+
 	public ByteBuffer loadByteBuffer() throws IOException {
 		return loadBinary()._b;
 	}
-	
+
 	private Project loadBinary() throws IOException {
 		if (_lpe == null || _b == null) { // Same
 			final File f = new File(_binaryPath);
