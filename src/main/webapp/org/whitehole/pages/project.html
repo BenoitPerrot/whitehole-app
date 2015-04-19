@@ -7,19 +7,22 @@
 
 <script src="/org/whitehole/utils/DOM.js"></script>
 
-<link rel="stylesheet" type="text/css" href="/org/whitehole/style/wh.css"/>
+<link rel="stylesheet" type="text/css" href="/org/whitehole/style/wh.css" />
 <link rel="import" href="/org/whitehole/components/wh-top-bar.html">
 <link rel="import" href="/org/whitehole/components/wh-pe-metadata-table.html">
+<link rel="import" href="/org/whitehole/components/wh-pe-import-table-entry.html">
 
 </head>
 
 <body>
 	<wh-top-bar></wh-top-bar>
-	<wh-pe-metadata-table></wh-pe-metadata-table>
+	<div id="content" style="overflow:auto; height:calc(100% - 4.6em);">
+		<wh-pe-metadata-table></wh-pe-metadata-table>
+	</div>
 </body>
 
 <script>
-(function () {
+(function() {
 	'use strict';
 
 	let q = {};
@@ -27,17 +30,29 @@
 		const p = e.split('=');
 		q[p[0]] = p[1];
 	});
-	
+
 	if (q.id)
 		fetch('/api/projects/' + q.id)
-			.then(function (r) { return r.json(); })
-			.then(function (project) {
+		.then(function(r) { return r.json(); })
+		.then(function(project) {
 
-				console.log(project);
-				const t = document.querySelector('wh-pe-metadata-table');
-				t.data = project.content.pe.header;
-			});
-	
-} ())
+			const pe = project.content.pe;
+
+			const t = document.querySelector('wh-pe-metadata-table');
+			t.data = pe.header;
+
+			// <<
+			if (pe.importTable) {
+				const b = new DOM.Builder(document.getElementById('content'));
+
+				pe.importTable.forEach(function(it) {
+					b.addElement('wh-pe-import-table-entry', {}, function(e) {
+						e.data = it;
+					})
+				});
+			}
+			// >>
+		});
+}())
 </script>
 </html>

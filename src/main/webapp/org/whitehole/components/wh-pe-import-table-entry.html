@@ -1,0 +1,34 @@
+<template id="wh-pe-import-table-entry">
+	<h1></h1>
+	<ul></ul>
+</template>
+
+<script>
+
+(function (DOM) {
+	'use strict';
+
+	const t = document.currentScript.ownerDocument.getElementById('wh-pe-import-table-entry');
+	document.registerElement(t.id, {
+		prototype: Object.create(HTMLElement.prototype, {
+    		createdCallback: {
+				value: function() {
+	    			this.root = this.createShadowRoot();
+	    			this.root.appendChild(document.importNode(t.content, true));
+				}
+    		},
+    		
+			data: {
+				set: function (value) {
+					new DOM.Builder(this.root.querySelector('h1')).addText(value.name);
+
+					value.lookupTable.reduce(function (b, lookup) {
+						return b.startElement('li').addText('(' + lookup.rva + ') ' + lookup.name).end();
+					}, new DOM.Builder(this.root.querySelector('ul')));
+				}
+			}
+		})
+	});
+} (DOM));
+</script>
+</polymer-element>
