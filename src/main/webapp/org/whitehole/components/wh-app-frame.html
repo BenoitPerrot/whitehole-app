@@ -1,0 +1,33 @@
+<link rel="import" href="/org/whitehole/components/wh-top-bar.html"/>
+
+<template id="wh-app-frame">
+	<style>
+:host {
+	height: 100%;
+	
+	display: flex;
+	flex-direction: column;
+}
+	</style>
+	<wh-top-bar style="box-shadow: 0 5px 7px 0px rgba(0, 0, 0, 0.4);"></wh-top-bar>
+	<div style="height:calc(100% - 4.6em); overflow:auto; display:flex; flex-direction:column;">
+		<content/>
+	</div>
+</template>
+<script>
+(function () {
+    'use strict';
+
+    const t = document.currentScript.ownerDocument.getElementById('wh-app-frame');
+    document.registerElement(t.id, {
+		prototype: Object.create(HTMLElement.prototype, {
+			createdCallback: {
+				value: function() {
+					this.createShadowRoot().appendChild(document.importNode(t.content, true));
+				}
+			}
+		})
+    });
+
+} ());
+</script>

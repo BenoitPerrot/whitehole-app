@@ -8,17 +8,18 @@
 <script src="/org/whitehole/utils/DOM.js"></script>
 
 <link rel="stylesheet" type="text/css" href="/org/whitehole/style/wh.css" />
-<link rel="import" href="/org/whitehole/components/wh-top-bar.html">
+<link rel="import" href="/org/whitehole/components/wh-app-frame.html">
 <link rel="import" href="/org/whitehole/components/wh-pe-metadata-table.html">
 <link rel="import" href="/org/whitehole/components/wh-pe-import-table-entry.html">
 
 </head>
 
 <body>
-	<wh-top-bar></wh-top-bar>
-	<div id="content" style="overflow:auto; height:calc(100% - 4.6em);">
-		<wh-pe-metadata-table></wh-pe-metadata-table>
-	</div>
+	<wh-app-frame>
+		<div id="content">
+			<wh-pe-metadata-table></wh-pe-metadata-table>
+		</div>
+	</wh-app-frame>
 </body>
 
 <script>
