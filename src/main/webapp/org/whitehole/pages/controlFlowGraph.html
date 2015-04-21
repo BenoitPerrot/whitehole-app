@@ -1,0 +1,46 @@
+<html>
+
+<head>
+<title>Whitehole</title>
+
+<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+
+<link rel="stylesheet" type="text/css" href="/org/whitehole/style/wh.css"/>
+<link rel="import" href="/org/whitehole/components/wh-app-frame.html">
+<!-- link rel="import" href="/org/whitehole/components/wh-control-flow-graph-editor.html" -->
+  
+</head>
+
+<body>
+
+<wh-app-frame>
+	<h1 contenteditable="true"></h1>
+	<div id="content" style="height:80%;">
+		<!-- wh-control-flow-graph-editor></wh-control-flow-graph-editor -->
+	</div>
+</wh-app-frame>
+
+<script>
+(function (Proxy, ControlFlowGraph) {
+	'use strict';
+
+	const q = {};
+	window.location.search.substring(1).split('&').forEach(function(e) {
+		const p = e.split('=');
+		q[p[0]] = p[1];
+	});
+
+	if (q.id && q.entryPoint)
+		fetch('/api/projects/' + q.id + '/controlFlowGraph?entryPoint=' + q.entryPoint)
+		.then(function (r) { return r.json(); })
+		.then(function (cfg) {
+			console.log(cfg);
+			// proxy.getControlFlowGraph(q.projectId, q.binaryId, q.entryPoint, function (x) {
+			// 	document.querySelector('wh-control-flow-graph-editor').model = new ControlFlowGraph(q.projectId, q.entryPoint, x);
+			// });
+	 	});
+} ());
+</script>
+
+</body>
+</html>

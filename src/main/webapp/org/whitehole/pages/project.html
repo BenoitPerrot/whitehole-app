@@ -62,7 +62,9 @@
 				project.entryPoints.forEach(function (p) {
 					b
 					.startElement('li')
+					.startElement('a', { 'href' : '/org/whitehole/pages/controlFlowGraph.html?id=' + q.id + '&entryPoint=' + p })
 					.addText(p)
+					.end()
 					.end();
 				});
 				b.end();

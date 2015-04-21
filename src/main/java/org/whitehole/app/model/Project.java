@@ -36,9 +36,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map.Entry;
+import java.util.Set;
 
 import org.whitehole.apps.JsonBuilder;
 import org.whitehole.assembly.ia32_x64.control.CallGraphExplorer;
@@ -92,11 +91,11 @@ public class Project {
 
 	// FIXME: move to some kind of container for Binaries
 	// <<
-	private ArrayList<Long> _entryPoints;
+	private HashMap<Long, ControlFlowGraph> _entryPointToControlFlowGraph;
 	
-	public ArrayList<Long> extractEntryPoints() throws Exception {
-		if (_entryPoints == null) {
-			_entryPoints = new ArrayList<Long>();
+	private Project exploreBinary() throws Exception {
+		if (_entryPointToControlFlowGraph == null) {
+			_entryPointToControlFlowGraph = new HashMap<>();
 
 			final Image lpe = loadImage();
 			final ByteBuffer buffer = loadByteBuffer();
@@ -113,18 +112,19 @@ public class Project {
 				// final long vma = imageBase + sh.getVirtualAddress().toBigInteger().longValue();
 				// Logger.getAnonymousLogger().info("Entry point in section '" + Explorer.getName(sh) + "' starting at VMA 0x" + Long.toHexString(vma));
 
-				final HashMap<Long, ControlFlowGraph> entryPointToControlFlowGraph = new HashMap<>();
 				CallGraphExplorer.explore(new Disassembler(lpe.isPE32x() ? Disassembler.WorkingMode._64BIT : Disassembler.WorkingMode._32BIT), buffer, Image.computeRVAToOffset(sh) + entryPointRVA,
-						entryPointToControlFlowGraph);
-
-				for (final Entry<Long, ControlFlowGraph> e : entryPointToControlFlowGraph.entrySet()) {
-					final ControlFlowGraph g = e.getValue();
-					_entryPoints.add(g.getBasicBlock(g.getEntryVertex()).getEntryPoint());
-				}
+						_entryPointToControlFlowGraph);
 			}
 		}
-
-		return _entryPoints;
+		return this;
+	}
+	
+	public Set<Long> extractEntryPoints() throws Exception {
+		return exploreBinary()._entryPointToControlFlowGraph.keySet();
+	}
+	
+	public ControlFlowGraph extractControlFlowGraph(long entryPoint) throws Exception {
+		return exploreBinary()._entryPointToControlFlowGraph.get(entryPoint);
 	}
 
 	private Image _lpe;
