@@ -1,0 +1,59 @@
+<template id="wh-basic-block">
+<h1></h1>
+<table></table>
+</template>
+<script>
+(function (DOM) {
+	'use strict';
+
+	const t = document.currentScript.ownerDocument.getElementById('wh-basic-block');
+	document.registerElement(t.id, {
+		prototype: Object.create(HTMLElement.prototype, {
+    		createdCallback: {
+				value: function() {
+	    			this.root = this.createShadowRoot();
+	    			this.root.appendChild(document.importNode(t.content, true));
+				}
+    		},
+    		
+			data: {
+				set: function (bb) {
+
+					this.root.querySelector('h1').innerText = bb.address;
+
+					const b = new DOM.Builder(this.root.querySelector('table'));
+
+					bb.instructions.forEach(function (i) {
+						b.startElement('tr');
+						
+					    if (i.m === 'call' && i.o && i.o.hasOwnProperty('rva'))
+						    b.startElement('a', {
+							    href : '/org/whitehole/pages/controlFlowGraph.html?id=' + bb.projectId + '&entryPoint=' + i.o.rva
+						    })
+					    else
+						    b.startElement('span');
+					    b.addText(i.m).end();
+
+						if (i.o) {
+							b.startElement('td');
+							if (Array.isArray(i.o))
+								i.o.reduce(function (isFirst, o) {
+									if (!isFirst)
+										b.addText(', ');
+									b.addText(o);
+									return false;
+								}, true);
+							else {
+								b.addText(i.o);
+							}
+							b.end();
+						}
+						b.end();
+					});
+
+				}
+			}
+		})
+	});
+} (DOM));
+</script>

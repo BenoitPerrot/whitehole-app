@@ -1,0 +1,37 @@
+<link rel="import" href="/org/whitehole/components/wh-basic-block.html">
+
+<template id="wh-control-flow-graph">
+</template>
+<script>
+(function (DOM) {
+	'use strict';
+
+	const t = document.currentScript.ownerDocument.getElementById('wh-control-flow-graph');
+	document.registerElement(t.id, {
+		prototype: Object.create(HTMLElement.prototype, {
+    		createdCallback: {
+				value: function() {
+	    			this.root = this.createShadowRoot();
+	    			this.root.appendChild(document.importNode(t.content, true));
+				}
+    		},
+
+			data: {
+				set: function (cfg) {
+					const b = new DOM.Builder(this.root);
+
+					cfg.basicBlocks.forEach(function (bb, address) {
+
+						bb.address = address;
+						bb.projectId = cfg.id;
+
+						b.addElement('wh-basic-block', {}, function (e) {
+							e.data = bb;
+						});
+					});
+				}
+			}
+		})
+	});
+} (DOM));
+</script>

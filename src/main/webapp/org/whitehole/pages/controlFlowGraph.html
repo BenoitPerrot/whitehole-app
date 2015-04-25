@@ -5,23 +5,22 @@
 
 <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
 
+<script src="/org/whitehole/utils/DOM.js"></script>
+
 <link rel="stylesheet" type="text/css" href="/org/whitehole/style/wh.css"/>
 <link rel="import" href="/org/whitehole/components/wh-app-frame.html">
-<!-- link rel="import" href="/org/whitehole/components/wh-control-flow-graph-editor.html" -->
+<link rel="import" href="/org/whitehole/components/wh-control-flow-graph.html">
   
 </head>
 
 <body>
 
 <wh-app-frame>
-	<h1 contenteditable="true"></h1>
-	<div id="content" style="height:80%;">
-		<!-- wh-control-flow-graph-editor></wh-control-flow-graph-editor -->
-	</div>
+	<wh-control-flow-graph></wh-control-flow-graph>
 </wh-app-frame>
 
 <script>
-(function (Proxy, ControlFlowGraph) {
+(function () {
 	'use strict';
 
 	const q = {};
@@ -30,14 +29,23 @@
 		q[p[0]] = p[1];
 	});
 
+	// <<
+	class ControlFlowGraph {
+		constructor(id, o) {
+			this.id = id;
+			this.basicBlocks = Object.keys(o.basicBlocks).reduce(function (m, address) {
+				m.set(address, o.basicBlocks[address]);
+				return m;
+			}, new Map());
+		}
+	}
+	// >>
+	
 	if (q.id && q.entryPoint)
 		fetch('/api/projects/' + q.id + '/controlFlowGraph?entryPoint=' + q.entryPoint)
 		.then(function (r) { return r.json(); })
-		.then(function (cfg) {
-			console.log(cfg);
-			// proxy.getControlFlowGraph(q.projectId, q.binaryId, q.entryPoint, function (x) {
-			// 	document.querySelector('wh-control-flow-graph-editor').model = new ControlFlowGraph(q.projectId, q.entryPoint, x);
-			// });
+		.then(function (o) {
+			document.querySelector('wh-control-flow-graph').data = new ControlFlowGraph(q.id, o);
 	 	});
 } ());
 </script>

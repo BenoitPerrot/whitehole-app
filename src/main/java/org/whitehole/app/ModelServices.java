@@ -119,7 +119,7 @@ public class ModelServices {
 
 		final StringWriter w = new StringWriter();
 
-		final ControlFlowGraph cfg = p.extractControlFlowGraph(Long.parseLong(entryPoint));
+		final ControlFlowGraph cfg = p.extractControlFlowGraph(entryPoint.startsWith("0x") ? Long.parseLong(entryPoint.substring(2), 16) : Long.parseLong(entryPoint));
 		if (cfg != null) {
 			final JsonGenerator.Builder g = new JsonGenerator.Builder();
 			write(g, cfg);
