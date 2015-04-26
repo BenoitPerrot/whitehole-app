@@ -31,14 +31,22 @@
 package org.whitehole.app.model;
 
 import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.whitehole.infra.json.JsonArray;
 import org.whitehole.infra.json.JsonArrayBuilder;
+import org.whitehole.infra.json.JsonGenerator;
+import org.whitehole.infra.json.JsonObject;
 
 public class ProjectRepository {
 	
-	final HashMap<String, Project> _projects = new HashMap<String, Project>();
+	private final HashMap<String, Project> _projects = new HashMap<>();
+	
+	public Stream<Entry<String, Project>> getProjects() {
+		return _projects.entrySet().stream();
+	}
 	
 	public Project newProject(String binaryPath) {
 		final String id = UUID.randomUUID().toString();
@@ -57,5 +65,25 @@ public class ProjectRepository {
 	
 	public Project getProjectById(String id) {
 		return _projects.get(id);
+	}
+	
+	public static JsonGenerator write(JsonGenerator g, ProjectRepository r) {
+		g.writeStartObject();
+		g.writeStartArray("projects");
+		r.getProjects().forEach(e -> {
+			Project.write(g, e.getValue());
+		});
+		g.writeEnd();
+		g.writeEnd();
+		return g;
+	}
+	
+	public static ProjectRepository fromJson(JsonObject pseudoProjectRepository) throws Exception {
+		final ProjectRepository pr = new ProjectRepository();
+		pseudoProjectRepository.getArray("projects").forEach(pseudoProject -> {
+			final Project p = Project.fromJson((JsonObject) pseudoProject);
+			pr._projects.put(p.getId(), p);
+		});
+		return pr;
 	}
 }

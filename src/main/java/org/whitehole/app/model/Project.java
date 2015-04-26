@@ -47,6 +47,7 @@ import org.whitehole.binary.pe.Image;
 import org.whitehole.binary.pe.SectionHeader;
 import org.whitehole.infra.io.LargeByteBuffer;
 import org.whitehole.infra.json.JsonArray;
+import org.whitehole.infra.json.JsonGenerator;
 import org.whitehole.infra.json.JsonNumber;
 import org.whitehole.infra.json.JsonObject;
 import org.whitehole.infra.json.JsonObjectBuilder;
@@ -54,7 +55,16 @@ import org.whitehole.infra.json.JsonObjectBuilder;
 public class Project {
 
 	private final String _id;
+	
+	public String getId() {
+		return _id;
+	}
+	
 	private final String _binaryPath;
+
+	public String getBinaryPath() {
+		return _binaryPath;
+	}
 
 	public Project(String id, String binaryPath) {
 		_id = id;
@@ -150,4 +160,17 @@ public class Project {
 		return this;
 	}
 	// >>
+
+	public static void write(JsonGenerator g, Project p) {
+		g.writeStartObject();
+		g.write("id", p._id);
+		g.write("binaryPath", p._binaryPath);
+		g.writeEnd();
+	}
+
+	public static Project fromJson(JsonObject pseudoProject) {
+		final String id = pseudoProject.getString("id").toString();
+		final String binaryPath = pseudoProject.getString("binaryPath").toString();
+		return new Project(id, binaryPath);
+	}
 }

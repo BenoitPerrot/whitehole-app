@@ -30,15 +30,24 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.whitehole.app;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.whitehole.app.model.ProjectRepository;
+import org.whitehole.infra.json.JsonGenerator;
+import org.whitehole.infra.json.JsonReader;
 
 public class Main {
 
 	static class Arguments {
 
 		public int port = 80;
+		public String repositoryPath = "c:/tmp/wh.json";
 		public String binaryPath = null;
 		
 		public Arguments(String[] args) {
@@ -50,6 +59,11 @@ public class Main {
 						++a;
 						if (a < args.length)
 							port = Integer.parseInt(args[a]);
+						break;
+					case "--repository-path":
+						++a;
+						if (a < args.length)
+							repositoryPath = args[a];
 						break;
 					case "--binary-path":
 						++a;
@@ -73,21 +87,48 @@ public class Main {
 		wac.setContextPath("/");
 		wac.setParentLoaderPriority(true);
 
-		final ProjectRepository r = new ProjectRepository();
-		
+		final ProjectRepository pr;
+		{
+			final File f = new File(args.repositoryPath);
+			if (f.exists()) {
+				try (final JsonReader r = new JsonReader(new FileReader(f))) {
+					pr = ProjectRepository.fromJson(r.readObject());
+				}
+			}
+			else
+				pr = new ProjectRepository();
+		}
+
+		// TODO: replace by a UI to create a project <<
 		if (args.binaryPath != null)
-			r.newProject(args.binaryPath);
-		
-		wac.setAttribute("repository", r);
+			if (!pr.getProjects().anyMatch(e -> {
+				return e.getValue().getBinaryPath().equals(args.binaryPath);
+			}))
+				pr.newProject(args.binaryPath);
+		// >>
+
+		wac.setAttribute("repository", pr);
 
 		server.setHandler(wac);
 
 		// Start
-        try {
-            server.start();
-            server.join();
-        } finally {
-            server.destroy();
-        }
+		try {
+			final ScheduledThreadPoolExecutor x = new ScheduledThreadPoolExecutor(2);
+			x.scheduleWithFixedDelay(() -> {
+				try (final JsonGenerator g = new JsonGenerator.Writer(new FileWriter(args.repositoryPath))) {
+					ProjectRepository.write(g, pr);
+				}
+				catch (Exception e) {
+					// TODO: log this correctly
+					e.printStackTrace();
+				}
+			}, 0, 5, TimeUnit.SECONDS);
+
+			server.start();
+			server.join();
+		}
+		finally {
+			server.destroy();
+		}
 	}
 }
