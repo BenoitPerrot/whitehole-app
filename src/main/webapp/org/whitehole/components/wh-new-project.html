@@ -150,10 +150,11 @@ h1:empty::before {
 		    		}
 
 		    		function accept() {
-		    			// <<
-		    			// nameEditor.innerText
-		    			// fileSelector.files[0]
-		    			// >>
+		    			// Let event bubble up
+						this.dispatchEvent(new CustomEvent("accepted", {detail:{
+							name: nameEditor.innerText,
+							file: fileSelector.files[0]
+						}}));
 		    			expander.expanded = false;
 		    		}
 		    		function cancel() {
