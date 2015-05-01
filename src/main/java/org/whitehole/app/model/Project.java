@@ -60,20 +60,32 @@ public class Project {
 		return _id;
 	}
 	
-	private final String _binaryPath;
+	private final String _name;
+	
+	public String getName() {
+		return _name;
+	}
+	
+	private String _binaryPath = "";
 
 	public String getBinaryPath() {
 		return _binaryPath;
 	}
-
-	public Project(String id, String binaryPath) {
-		_id = id;
+	
+	public Project setBinaryPath(String binaryPath) {
 		_binaryPath = binaryPath.replace("\\", "/");
+		return this;
+	}
+
+	public Project(String id, String name) {
+		_id = id;
+		_name = name;
 	}
 
 	public JsonObject toBriefJson() {
 		return new JsonObjectBuilder()
 				.add("id", _id)
+				.add("name", _name)
 				.add("binaryPath", _binaryPath)
 				.build();
 	}
@@ -81,6 +93,7 @@ public class Project {
 	public JsonObject toJson() {
 		final JsonObjectBuilder b = new JsonObjectBuilder();
 		b.add("id", _id);
+		b.add("name", _name);
 		b.add("binaryPath", _binaryPath);
 
 		try {
@@ -164,13 +177,15 @@ public class Project {
 	public static void write(JsonGenerator g, Project p) {
 		g.writeStartObject();
 		g.write("id", p._id);
+		g.write("name", p._name);
 		g.write("binaryPath", p._binaryPath);
 		g.writeEnd();
 	}
 
 	public static Project fromJson(JsonObject pseudoProject) {
 		final String id = pseudoProject.getString("id").toString();
+		final String name = pseudoProject.getString("name").toString();
 		final String binaryPath = pseudoProject.getString("binaryPath").toString();
-		return new Project(id, binaryPath);
+		return new Project(id, name).setBinaryPath(binaryPath);
 	}
 }

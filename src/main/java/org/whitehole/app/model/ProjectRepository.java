@@ -48,9 +48,9 @@ public class ProjectRepository {
 		return _projects.entrySet().stream();
 	}
 	
-	public Project newProject(String binaryPath) {
+	public Project newProject(String name) {
 		final String id = UUID.randomUUID().toString();
-		final Project p = new Project(id, binaryPath);
+		final Project p = new Project(id, name);
 		_projects.put(id, p);
 		return p;
 	}
