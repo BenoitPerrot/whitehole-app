@@ -36,28 +36,25 @@ const Client = (function () {
 			this.base = base || '';
 		}
 		
-		fetch(uri, options) {
-			return fetch(this.base + '/api/' + uri, options);
+		fetchJSON(uri, options) {
+			return fetch(this.base + '/api/' + uri, options)
+				.then(function (r) { return r.json(); });
 		}
 		
 		getProjectBriefs() {
-			return this.fetch('projects')
-				.then(function (r) { return r.json(); });
+			return this.fetchJSON('projects');
 		}
 		
 		newProject(name) {
-			return this.fetch('projects/new?name=' + name, {method: 'POST'})
-				.then(function (r) { return r.json(); });
+			return this.fetchJSON('projects/new?name=' + name, {method: 'POST'});
 		}
 		
 		getProject(projectId) {
-			return this.fetch('projects/' + projectId)
-				.then(function(r) { return r.json(); });
+			return this.fetchJSON('projects/' + projectId);
 		}
 		
 		getControlFlowGraph(projectId, entryPoint) {
-			return this.fetch('projects/' + projectId + '/controlFlowGraph?entryPoint=' + entryPoint)
-				.then(function (r) { return r.json(); })
+			return this.fetchJSON('projects/' + projectId + '/controlFlowGraph?entryPoint=' + entryPoint);
 		}
 	};
 } ());
