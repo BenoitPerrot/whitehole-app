@@ -1,0 +1,45 @@
+<template id="wh-expander">
+	<style>
+:host {
+	display: block;
+    overflow: hidden;
+}
+
+:host ::content > section {
+	max-height: 0;
+    transition: max-height 0.2s ease-out;
+}
+
+:host([expanded=true]) ::content > section {
+	max-height: 100%;
+    transition: max-height 0.2s ease-in;
+}
+	</style>
+	<content select="h1"></content>
+	<content expanded="false" select="section"></content>
+</template>
+
+<script>
+(function () {
+	'use strict';
+
+	const t = document.currentScript.ownerDocument.getElementById('wh-expander');
+	document.registerElement(t.id, {
+		prototype: Object.create(HTMLElement.prototype, {
+	    	createdCallback: {
+				value: function() {
+		    		this.createShadowRoot().appendChild(document.importNode(t.content, true));
+				}
+	    	},
+	    	expanded: {
+	    		set(value) {
+	    	    	this.setAttribute('expanded', value ? 'true' : '');
+	    		},
+	    		get() {
+	    	    	return this.getAttribute('expanded') === 'true';
+	    		}
+	    	}
+		})
+	});
+} ());
+</script>
