@@ -45,6 +45,11 @@ const Client = (function () {
 				.then(function (r) { return r.json(); });
 		}
 		
+		newProject(name) {
+			return this.fetch('projects/new?name=' + name, {method: 'POST'})
+				.then(function (r) { return r.json(); });
+		}
+		
 		getProject(projectId) {
 			return this.fetch('projects/' + projectId)
 				.then(function(r) { return r.json(); });
