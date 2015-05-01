@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
 
 <script src="/org/whitehole/utils/DOM.js"></script>
+<script src="/org/whitehole/net/Client.js"></script>
 
 <link rel="stylesheet" type="text/css" href="/org/whitehole/style/wh.css" />
 <link rel="import" href="/org/whitehole/components/wh-app-frame.html">
@@ -33,9 +34,7 @@
 	});
 
 	if (q.id)
-		fetch('/api/projects/' + q.id)
-		.then(function(r) { return r.json(); })
-		.then(function(project) {
+		new Client().getProject(q.id).then(function(project) {
 			project.entryPoints.sort();
 
 			const pe = project.content.pe;

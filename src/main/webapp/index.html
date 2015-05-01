@@ -31,6 +31,7 @@ ul#projects li {
 }
 	</style>
 	<script src="/org/whitehole/utils/DOM.js"></script>
+	<script src="/org/whitehole/net/Client.js"></script>
 	<link rel="import" href="/org/whitehole/components/wh-new-project.html"/>
 </head>
 <body>
@@ -56,22 +57,20 @@ ul#projects li {
 <script>
 onload = (function () {
 
-	fetch('/api/projects')
-		.then(function (r) { return r.json(); })
-		.then(function (projectBriefs) {
-			const b = new DOM.Builder(document.getElementById('projects'));
-			projectBriefs.forEach(function (projectBrief) {
-				const l = projectBrief.binaryPath.split('/');
-				b
-				.startElement('li', {'class': 'card'})
-				.startElement('h2')
-				.startElement('a', { 'href': '/org/whitehole/pages/project.html?id=' + projectBrief.id })
-				.addText(l[l.length - 1])
-				.end()
-				.end()
-				.end();
-			});
+	new Client().getProjectBriefs().then(function (projectBriefs) {
+		const b = new DOM.Builder(document.getElementById('projects'));
+		projectBriefs.forEach(function (projectBrief) {
+			const l = projectBrief.binaryPath.split('/');
+			b
+			.startElement('li', {'class': 'card'})
+			.startElement('h2')
+			.startElement('a', { 'href': '/org/whitehole/pages/project.html?id=' + projectBrief.id })
+			.addText(l[l.length - 1])
+			.end()
+			.end()
+			.end();
 		});
+	});
 
 })</script>
 </body>

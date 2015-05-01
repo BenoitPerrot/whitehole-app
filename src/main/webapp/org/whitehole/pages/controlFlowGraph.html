@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
 
 <script src="/org/whitehole/utils/DOM.js"></script>
+<script src="/org/whitehole/net/Client.js"></script>
 
 <link rel="stylesheet" type="text/css" href="/org/whitehole/style/wh.css"/>
 <link rel="import" href="/org/whitehole/components/wh-app-frame.html">
@@ -42,9 +43,7 @@
 	// >>
 	
 	if (q.id && q.entryPoint)
-		fetch('/api/projects/' + q.id + '/controlFlowGraph?entryPoint=' + q.entryPoint)
-		.then(function (r) { return r.json(); })
-		.then(function (o) {
+		new Client().getControlFlowGraph(q.id, q.entryPoint).then(function (o) {
 			document.querySelector('wh-control-flow-graph').data = new ControlFlowGraph(q.id, o);
 	 	});
 } ());
