@@ -37,6 +37,7 @@ import java.util.Map.Entry;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -75,6 +76,26 @@ public class ModelServices {
 		final StringWriter w = new StringWriter();
 		final JsonWriter jw = new JsonWriter(w);
 		jw.write(r.getProjectBriefs());
+		jw.close();
+		return w.toString();
+	}
+	
+	@POST
+	@Path("/projects/new")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String newProject(
+			@Context ServletContext context,
+			@QueryParam("name") String name) throws Exception {
+
+		final ProjectRepository r = (ProjectRepository) context.getAttribute("repository");
+		if (r == null) throw new WebApplicationException("No project repository.", 500);
+		
+		final Project p = r.newProject(name);
+		if (p == null) throw new WebApplicationException("Project could not be created.", 500);
+
+		final StringWriter w = new StringWriter();
+		final JsonWriter jw = new JsonWriter(w);
+		jw.write(p.toBriefJson());
 		jw.close();
 		return w.toString();
 	}
