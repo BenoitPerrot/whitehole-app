@@ -1,13 +1,78 @@
 <html>
 <head>
 	<link rel="stylesheet" type="text/css" href="/org/whitehole/style/wh.css" />
+	<style>
+ul {
+	list-style-type: none;
+
+	padding: 0;
+	margin: 0 auto;
+	width: 45em;
+}
+li {
+	padding: 0.5em 1em;
+}
+li:hover {
+	border: 1px solid #999;
+}
+
+ul#projects {
+	margin-top: 1em;
+}
+ul#projects li {
+	margin-bottom: 1em;
+}
+
+.scrollable-y {
+	overflow-y: hidden;
+}
+.scrollable-y:hover {
+	overflow-y: overlay;
+}
+	</style>
+	<script src="/org/whitehole/utils/DOM.js"></script>
+	<link rel="import" href="/org/whitehole/components/wh-new-project.html"/>
 </head>
-<body style="display: flex; flex-direction: column; justify-content: space-around;">
-<div style="text-align: center; display: flex;">
-<div style="width: 100%;">
-	<img src="/org/whitehole/style/images/logo.alpha.png" style="height: 72pt; padding-right: 32pt; vertical-align: middle;"/>
-	<h1 style="font-size: 80pt; margin: 0; display: inline-block; vertical-align: middle;">Whitehole</h1>
+<body>
+
+<div style="height: 35%; display:flex; flex-direction:column; align-items:flex-end;">
+	<div style="margin-left:auto; margin-right:auto; margin-top: auto; margin-bottom: 1em;">
+		<img src="/org/whitehole/style/images/logo.alpha.png" style="height:72pt; padding-right:1.5em; vertical-align:middle;"/>
+		<h1 style="font-size:80pt; margin:0; display:inline-block; vertical-align:middle;">Whitehole</h1>
+	</div>
 </div>
+<div style="height: 65%; overflow: hidden;">
+
+	<wh-new-project class="card" style="width:45em; margin:0 auto;"></wh-new-project>
+	
+	<div style="height:85%; position:relative">
+		<div class="scrollable-y" style="height:100%">
+			<ul id="projects">
+			</ul>
+		</div>
+	</div>
 </div>
+
+<script>
+onload = (function () {
+
+	fetch('/api/projects')
+		.then(function (r) { return r.json(); })
+		.then(function (projectBriefs) {
+			const b = new DOM.Builder(document.getElementById('projects'));
+			projectBriefs.forEach(function (projectBrief) {
+				const l = projectBrief.binaryPath.split('/');
+				b
+				.startElement('li', {'class': 'card'})
+				.startElement('h2')
+				.startElement('a', { 'href': '/org/whitehole/pages/project.html?id=' + projectBrief.id })
+				.addText(l[l.length - 1])
+				.end()
+				.end()
+				.end();
+			});
+		});
+
+})</script>
 </body>
 </html>

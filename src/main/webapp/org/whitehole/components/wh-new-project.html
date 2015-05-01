@@ -1,0 +1,175 @@
+<link rel="import" href="/org/whitehole/components/wh-expander.html"/>
+
+<template id="wh-new-project">
+	<style>
+:host {
+	display: block;
+}
+
+h1 {
+	margin: 0.5em;
+	padding: 0.2em 0;
+}
+h1:empty::before {
+	content: '+ NEW PROJECT';
+	color: #999;
+}
+
+.button {
+	cursor: default;
+
+	display: inline-block;
+
+	border: solid 1px #fff;
+	width: 40%;
+	margin: 0.5em;
+	padding: 0.5em;
+	
+	color: #ccc;
+	font-size: 1.5em;
+	font-weight: bold;
+	text-align: center;
+}
+
+.button[enabled=false] {
+	color: #ddd;
+	border-color: #ddd;
+}
+.button[enabled=true] {
+	cursor: pointer;
+	color: #999;
+	border-color: #999;
+}
+.button[enabled=true]:hover {
+	border-color: #000;
+	color: #000;
+}
+	</style>
+
+	<wh-expander id="expander">
+		<h1 id="nameEditor" contenteditable="true"></h1>
+		<section>
+			<div style="padding:0.5em 1em; font-size:1.5em;"><form id="wrapper" style="margin:0;">
+				<input style="display:none" type="file" id="fileSelector"></input>Binary:
+				<a href="#" id="selectFile">Select</a>
+			</form></div>
+			<div style="display:flex; justify-content:space-around;">
+				<div class="button" enabled="false" id="ok">OK</div>
+				<div class="button" enabled="true" id="cancel">Cancel</div>
+			</div>
+		</section>
+	</wh-expander>
+</template>
+
+<script>
+(function () {
+    'use strict';
+
+    const t = document.currentScript.ownerDocument.getElementById('wh-new-project');
+    document.registerElement(t.id, {
+		prototype: Object.create(HTMLElement.prototype, {
+	    	createdCallback: {
+				value: function() {
+		    		const shadowRoot = this.createShadowRoot();
+		    		shadowRoot.appendChild(document.importNode(t.content, true));
+
+		    		function byId(id) {
+		    			return shadowRoot.getElementById(id);
+		    		}
+		    		
+		    		const nameEditor = byId('nameEditor');
+		    		const expander = byId('expander');
+
+		    		const selectFile = byId('selectFile');
+		    		const fileSelector = byId('fileSelector');
+
+		    		// Name editor
+
+		    		let previousName = '';
+
+		    		nameEditor.addEventListener('focus', function (e) {
+		    			expander.expanded = true;
+		    		});
+
+		    		nameEditor.addEventListener('blur', function (e) {
+	    				previousName = nameEditor.innerText;
+		    		});
+
+		    		nameEditor.addEventListener('keydown', function(e) {
+		    			if (e.keyCode == 13) { // Enter
+		    				if (isValid)
+			    				accept();
+		    				nameEditor.blur();
+			    			e.preventDefault();
+		    			}
+		    		});
+
+		    		nameEditor.addEventListener('keyup', function(e) {
+		    			if (e.keyCode === 27) { // Esc
+		    				nameEditor.innerText = previousName;
+		    				nameEditor.blur();
+		    				e.preventDefault();
+		    			}
+		    			validate();
+		    		});
+		    		
+		    		// OK/Cancel buttons
+
+		    		const okButton = byId('ok');
+		    		okButton.addEventListener('click',  accept);
+
+		    		const cancelButton = byId('cancel');
+		    		cancelButton.addEventListener('click', cancel);
+
+		    		// File selection
+		    		
+		    		fileSelector.addEventListener('change', function(e) {
+		    			if (0 < fileSelector.files.length) {
+		    				selectFile.textContent = fileSelector.files[0].name;
+		    				if (nameEditor.innerText === '')
+		    					nameEditor.innerText = selectFile.textContent;
+		    				nameEditor.focus();
+		    			}
+		    			else
+		    				selectFile.textContent = 'Select';
+		    			validate();
+		    		});
+
+		    		selectFile.addEventListener('click', function(e) {
+		    			fileSelector.click();
+		    			e.preventDefault(); // prevent navigation to "#"
+		    		}, false);
+
+		    		// Validation logic
+		    		
+		    		let isValid = false;
+		    		
+		    		function validate() {
+		    			isValid = nameEditor.innerText && fileSelector.files.length;
+			    		okButton.setAttribute('enabled', isValid ? 'true' : 'false');
+		    		}
+
+		    		function accept() {
+		    			// <<
+		    			// nameEditor.innerText
+		    			// fileSelector.files[0]
+		    			// >>
+		    			expander.expanded = false;
+		    		}
+		    		function cancel() {
+		    			nameEditor.innerText = '';
+		    			previousName = '';
+		    			
+		    			fileSelector.value = '';
+		    			selectFile.innerText = 'Select';
+
+		    			validate();
+
+		    			expander.expanded = false;
+		    		}
+				}
+	    	}
+		})
+    });
+} ());
+</script>

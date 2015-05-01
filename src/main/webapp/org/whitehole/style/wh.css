@@ -21,11 +21,15 @@ a {
 	text-decoration: none;
 }
 
+.card {
+	box-sizing: border-box;
+	border: 1px solid #ccc;
+	background-color: #fff;
+	box-shadow: 0 5px 7px 0px rgba(0, 0, 0, 0.4);
+}
+
 /* Helpers */
 
 .unselectable {
-	-moz-user-select: none;
-	-webkit-user-select: none;
-	-ms-user-select: none;
 	cursor: default;
 }
