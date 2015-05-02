@@ -76,6 +76,10 @@ onload = (function () {
 	newProjectDOM.addEventListener('accepted', function (e) {
  		cl.newProject(e.detail.name).then(function (projectBrief) {
 			addProjectBriefDOM(projectBrief);
+			
+			cl.addBinaryToProject(projectBrief.id, e.detail.file, function (progress) {
+				console.log(progress)
+			});
 		});
 	});
 	

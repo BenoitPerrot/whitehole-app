@@ -49,6 +49,15 @@ const Client = (function () {
 			return this.fetchJSON('projects/new?name=' + name, {method: 'POST'});
 		}
 		
+		addBinaryToProject(projectId, file, progresscb) {
+			console.log(file);
+			return this.fetchJSON('projects/' + projectId + '/newBinary?name=' + encodeURIComponent(file.name), {method: 'POST'})
+				.then(function (x) {
+					console.log(x);
+					return 0;
+				});
+		}
+		
 		getProject(projectId) {
 			return this.fetchJSON('projects/' + projectId);
 		}

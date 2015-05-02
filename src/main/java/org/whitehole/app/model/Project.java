@@ -38,6 +38,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.UUID;
 
 import org.whitehole.apps.JsonBuilder;
 import org.whitehole.assembly.ia32_x64.control.CallGraphExplorer;
@@ -80,6 +81,10 @@ public class Project {
 	public Project(String id, String name) {
 		_id = id;
 		_name = name;
+	}
+
+	public String newBinary(String binaryName) throws IOException {
+		return "\"" + UUID.randomUUID().toString() + "\"";
 	}
 
 	public JsonObject toBriefJson() {

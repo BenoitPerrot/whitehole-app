@@ -121,6 +121,23 @@ public class ModelServices {
 		return w.toString();
 	}
 
+	@POST
+	@Path("/projects/{projectId}/newBinary")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String newBinary(
+			@Context ServletContext context,
+			@PathParam("projectId") String projectId,
+			@QueryParam("name") String binaryName) throws Exception {
+
+		final ProjectRepository r = (ProjectRepository) context.getAttribute("repository");
+		if (r == null) throw new WebApplicationException("No project repository.", 500);
+		
+		final Project p = r.getProjectById(projectId);
+		if (p == null) throw new WebApplicationException("Binary could not be created.", 500);
+
+		return p.newBinary(binaryName);
+	}
+
 	@GET
 	@Path("/projects/{projectId}/controlFlowGraph")
 	@Produces(MediaType.TEXT_PLAIN)
