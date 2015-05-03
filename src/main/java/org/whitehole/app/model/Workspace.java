@@ -48,7 +48,7 @@ import org.whitehole.infra.json.JsonObject;
 import org.whitehole.infra.json.JsonReader;
 import org.whitehole.infra.json.JsonValue;
 
-public class ProjectRepository {
+public class Workspace {
 	
 	private final Path _path;
 	
@@ -62,7 +62,7 @@ public class ProjectRepository {
 		return _projects.entrySet().stream();
 	}
 	
-	public ProjectRepository(Path path) throws Exception {
+	public Workspace(Path path) throws Exception {
 		_path = path;
 
 		// Create directories
@@ -111,7 +111,7 @@ public class ProjectRepository {
 	//
 	//
 
-	private ProjectRepository load(Path indexPath) throws Exception {
+	private Workspace load(Path indexPath) throws Exception {
 		try (final JsonReader r = new JsonReader(new FileReader(indexPath.toFile()))) {
 			final JsonObject o = r.readObject();
 			for (final JsonValue id : o.getArray("projects"))
@@ -120,7 +120,7 @@ public class ProjectRepository {
 		return this;
 	}
 	
-	private ProjectRepository save(Path indexPath) throws JsonException, IOException {
+	private Workspace save(Path indexPath) throws JsonException, IOException {
 		try (final JsonGenerator g = new JsonGenerator.Writer(new FileWriter(indexPath.toFile()))) {
 			g.writeStartObject();
 			g.writeStartArray("projects");

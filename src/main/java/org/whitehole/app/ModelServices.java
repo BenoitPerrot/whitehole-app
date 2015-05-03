@@ -47,7 +47,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import org.whitehole.app.model.Project;
-import org.whitehole.app.model.ProjectRepository;
+import org.whitehole.app.model.Workspace;
 import org.whitehole.apps.objdump.assembly.ia32_x64.IntelStringWriter;
 import org.whitehole.assembly.ia32_x64.control.BasicBlock;
 import org.whitehole.assembly.ia32_x64.control.ControlFlowGraph;
@@ -70,12 +70,12 @@ public class ModelServices {
 			@Context ServletContext context,
 			@Context HttpServletResponse response) throws IOException {
 
-		final ProjectRepository r = (ProjectRepository) context.getAttribute("repository");
-		if (r == null) throw new WebApplicationException("No project repository.", 500);
+		final Workspace ws = (Workspace) context.getAttribute("workspace");
+		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 
 		final StringWriter w = new StringWriter();
 		final JsonWriter jw = new JsonWriter(w);
-		jw.write(r.getProjectBriefs());
+		jw.write(ws.getProjectBriefs());
 		jw.close();
 		return w.toString();
 	}
@@ -87,10 +87,10 @@ public class ModelServices {
 			@Context ServletContext context,
 			@QueryParam("name") String name) throws Exception {
 
-		final ProjectRepository r = (ProjectRepository) context.getAttribute("repository");
-		if (r == null) throw new WebApplicationException("No project repository.", 500);
+		final Workspace ws = (Workspace) context.getAttribute("workspace");
+		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 		
-		final Project p = r.newProject(name);
+		final Project p = ws.newProject(name);
 		if (p == null) throw new WebApplicationException("Project could not be created.", 500);
 
 		final StringWriter w = new StringWriter();
@@ -107,11 +107,11 @@ public class ModelServices {
 			@Context ServletContext context,
 			@PathParam("projectId") String projectId,
 			@Context HttpServletResponse response) throws Exception {
-		
-		final ProjectRepository r = (ProjectRepository) context.getAttribute("repository");
-		if (r == null) throw new WebApplicationException("No project repository.", 500);
 
-		final Project p = r.getProjectById(projectId);
+		final Workspace ws = (Workspace) context.getAttribute("workspace");
+		if (ws == null) throw new WebApplicationException("No workspace.", 500);
+
+		final Project p = ws.getProjectById(projectId);
 		if (p == null) throw new WebApplicationException("No such project.", 404);
 
 		final StringWriter w = new StringWriter();
@@ -129,10 +129,10 @@ public class ModelServices {
 			@PathParam("projectId") String projectId,
 			@QueryParam("name") String binaryName) throws Exception {
 
-		final ProjectRepository r = (ProjectRepository) context.getAttribute("repository");
-		if (r == null) throw new WebApplicationException("No project repository.", 500);
+		final Workspace ws = (Workspace) context.getAttribute("workspace");
+		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 		
-		final Project p = r.getProjectById(projectId);
+		final Project p = ws.getProjectById(projectId);
 		if (p == null) throw new WebApplicationException("Binary could not be created.", 500);
 
 		return p.newBinary(binaryName);
@@ -149,10 +149,10 @@ public class ModelServices {
 
 		if (entryPoint == null) throw new WebApplicationException("An entryPoint is required.", 400);
 
-		final ProjectRepository r = (ProjectRepository) context.getAttribute("repository");
-		if (r == null) throw new WebApplicationException("No project repository.", 500);
+		final Workspace ws = (Workspace) context.getAttribute("workspace");
+		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 
-		final Project p = r.getProjectById(projectId);
+		final Project p = ws.getProjectById(projectId);
 		if (p == null) throw new WebApplicationException("No such project.", 404);
 
 		final StringWriter w = new StringWriter();
