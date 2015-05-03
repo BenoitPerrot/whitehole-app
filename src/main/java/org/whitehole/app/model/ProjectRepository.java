@@ -30,6 +30,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.whitehole.app.model;
 
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -37,10 +42,19 @@ import java.util.stream.Stream;
 
 import org.whitehole.infra.json.JsonArray;
 import org.whitehole.infra.json.JsonArrayBuilder;
+import org.whitehole.infra.json.JsonException;
 import org.whitehole.infra.json.JsonGenerator;
 import org.whitehole.infra.json.JsonObject;
+import org.whitehole.infra.json.JsonReader;
+import org.whitehole.infra.json.JsonValue;
 
 public class ProjectRepository {
+	
+	private final Path _path;
+	
+	public Path getPath() {
+		return _path;
+	}
 	
 	private final HashMap<String, Project> _projects = new HashMap<>();
 	
@@ -48,10 +62,36 @@ public class ProjectRepository {
 		return _projects.entrySet().stream();
 	}
 	
-	public Project newProject(String name) {
+	public ProjectRepository(Path path) throws Exception {
+		_path = path;
+
+		// Create directories
+		Files.createDirectories(path);
+		
+		// Load index if any <<
+		final Path indexPath = path.resolve("index.json");
+		if (Files.exists(indexPath))
+			load(indexPath);
+	}
+	
+	//
+	//
+	//
+	
+	public Project newProject(String name) throws IOException {
+
 		final String id = UUID.randomUUID().toString();
+		
+		final Path path = _path.resolve(id.toString());
+		Files.createDirectory(path);
+		
 		final Project p = new Project(id, name);
 		_projects.put(id, p);
+
+		// Save index <<
+		save(_path.resolve("index.json"));
+		// >>
+		
 		return p;
 	}
 	
@@ -67,23 +107,29 @@ public class ProjectRepository {
 		return _projects.get(id);
 	}
 	
-	public static JsonGenerator write(JsonGenerator g, ProjectRepository r) {
-		g.writeStartObject();
-		g.writeStartArray("projects");
-		r.getProjects().forEach(e -> {
-			Project.write(g, e.getValue());
-		});
-		g.writeEnd();
-		g.writeEnd();
-		return g;
+	//
+	//
+	//
+
+	private ProjectRepository load(Path indexPath) throws Exception {
+		try (final JsonReader r = new JsonReader(new FileReader(indexPath.toFile()))) {
+			final JsonObject o = r.readObject();
+			for (final JsonValue id : o.getArray("projects"))
+				_projects.put(id.toString(), Project.load(indexPath.getParent().resolve(id.toString()).resolve("description.json")));
+		}
+		return this;
 	}
 	
-	public static ProjectRepository fromJson(JsonObject pseudoProjectRepository) throws Exception {
-		final ProjectRepository pr = new ProjectRepository();
-		pseudoProjectRepository.getArray("projects").forEach(pseudoProject -> {
-			final Project p = Project.fromJson((JsonObject) pseudoProject);
-			pr._projects.put(p.getId(), p);
-		});
-		return pr;
+	private ProjectRepository save(Path indexPath) throws JsonException, IOException {
+		try (final JsonGenerator g = new JsonGenerator.Writer(new FileWriter(indexPath.toFile()))) {
+			g.writeStartObject();
+			g.writeStartArray("projects");
+			_projects.forEach((id, p) -> {
+				g.write(id);
+			});
+			g.writeEnd();
+			g.writeEnd();
+		}
+		return this;
 	}
 }

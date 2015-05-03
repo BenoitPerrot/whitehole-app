@@ -32,10 +32,12 @@ package org.whitehole.app.model;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.UUID;
@@ -52,6 +54,7 @@ import org.whitehole.infra.json.JsonGenerator;
 import org.whitehole.infra.json.JsonNumber;
 import org.whitehole.infra.json.JsonObject;
 import org.whitehole.infra.json.JsonObjectBuilder;
+import org.whitehole.infra.json.JsonReader;
 
 public class Project {
 
@@ -179,6 +182,10 @@ public class Project {
 	}
 	// >>
 
+	//
+	//
+	//
+	
 	public static void write(JsonGenerator g, Project p) {
 		g.writeStartObject();
 		g.write("id", p._id);
@@ -187,10 +194,13 @@ public class Project {
 		g.writeEnd();
 	}
 
-	public static Project fromJson(JsonObject pseudoProject) {
-		final String id = pseudoProject.getString("id").toString();
-		final String name = pseudoProject.getString("name").toString();
-		final String binaryPath = pseudoProject.getString("binaryPath").toString();
-		return new Project(id, name).setBinaryPath(binaryPath);
+	public static Project load(Path path) throws Exception {
+		try (final JsonReader r = new JsonReader(new FileReader(path.toFile()))) {
+			final JsonObject o = r.readObject();
+			final String id = o.getString("id").toString();
+			final String name = o.getString("name").toString();
+			final String binaryPath = o.getString("binaryPath").toString();
+			return new Project(id, name).setBinaryPath(binaryPath);
+		}
 	}
 }
