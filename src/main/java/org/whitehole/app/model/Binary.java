@@ -46,53 +46,42 @@ public class Binary {
 	// <<
 	private HashMap<Long, ControlFlowGraph> _entryPointToControlFlowGraph;
 
-	private Binary explore(Path path) throws Exception {
+	private Binary explore() throws Exception {
 		if (_entryPointToControlFlowGraph == null) {
 			_entryPointToControlFlowGraph = new HashMap<>();
 
-			final Image lpe = loadImage(path);
-			final ByteBuffer buffer = loadByteBuffer(path);
-
-			final long entryPointRVA = lpe.getAddressOfEntryPoint().longValue();
+			final long entryPointRVA = _lpe.getAddressOfEntryPoint().longValue();
 			// Entry point (relative to image base): Long.toHexString(entryPointRVA))
 			// Entry point (absolute): Long.toHexString(entryPointRVA + imageBase))
 
 			// ep relative to imgb
 			// h.getVA relative to imgb
-			final SectionHeader sh = lpe.findSectionHeaderByRVA(entryPointRVA);
+			final SectionHeader sh = _lpe.findSectionHeaderByRVA(entryPointRVA);
 			if (sh != null) {
 
 				// final long vma = imageBase + sh.getVirtualAddress().toBigInteger().longValue();
 				// Logger.getAnonymousLogger().info("Entry point in section '" + Explorer.getName(sh) + "' starting at VMA 0x" + Long.toHexString(vma));
 
-				CallGraphExplorer.explore(new Disassembler(lpe.isPE32x() ? Disassembler.WorkingMode._64BIT : Disassembler.WorkingMode._32BIT), buffer, Image.computeRVAToOffset(sh) + entryPointRVA,
+				CallGraphExplorer.explore(new Disassembler(_lpe.isPE32x() ? Disassembler.WorkingMode._64BIT : Disassembler.WorkingMode._32BIT), _b, Image.computeRVAToOffset(sh) + entryPointRVA,
 						_entryPointToControlFlowGraph);
 			}
 		}
 		return this;
 	}
 
-	public Set<Long> extractEntryPoints(Path path) throws Exception {
-		return explore(path)._entryPointToControlFlowGraph.keySet();
+	public Set<Long> extractEntryPoints() throws Exception {
+		return explore()._entryPointToControlFlowGraph.keySet();
 	}
 
-	public ControlFlowGraph extractControlFlowGraph(Path path, long entryPoint) throws Exception {
-		return explore(path)._entryPointToControlFlowGraph.get(entryPoint);
+	public ControlFlowGraph extractControlFlowGraph(long entryPoint) throws Exception {
+		return explore()._entryPointToControlFlowGraph.get(entryPoint);
 	}
 
 	private Image _lpe;
 
-	public Image loadImage(Path path) throws IOException {
-		return load(path)._lpe;
-	}
-
 	private ByteBuffer _b;
 
-	public ByteBuffer loadByteBuffer(Path path) throws IOException {
-		return load(path)._b;
-	}
-
-	private Binary load(Path path) throws IOException {
+	public Binary load(Path path) throws IOException {
 		if (_lpe == null || _b == null) { // Same
 			final File f = path.toFile();
 			final FileInputStream fi = new FileInputStream(f);
@@ -105,14 +94,14 @@ public class Binary {
 		return this;
 	}
 
-	public JsonObject toJson(JsonObject o, Path path) {
+	public JsonObject toJson(JsonObject o) {
 		try {
 			final JsonObjectBuilder pe = new JsonObjectBuilder();
-			pe.add("pe", JsonBuilder.toJson(new JsonObjectBuilder(), loadImage(path)));
+			pe.add("pe", JsonBuilder.toJson(new JsonObjectBuilder(), _lpe));
 			o.put("content", pe.build());
 
 			final JsonArray entryPoints = new JsonArray();
-			extractEntryPoints(path).stream().forEach(p -> entryPoints.add(new JsonNumber(new BigDecimal(p))));
+			extractEntryPoints().stream().forEach(p -> entryPoints.add(new JsonNumber(new BigDecimal(p))));
 			o.put("entryPoints", entryPoints);
 		}
 		catch (Exception x) {

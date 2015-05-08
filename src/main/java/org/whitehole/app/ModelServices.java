@@ -149,7 +149,8 @@ public class ModelServices {
 
 		final Binary first = p.getBinaries().values().iterator().next();
 		x.put("binaryId", new JsonString(first.getId().toString()));
-		first.toJson(x, path.resolve(first.getId().toString()));
+		first.load(path.resolve(first.getId().toString()));
+		first.toJson(x);
 
 		jw.writeObject(x);
 		jw.close();
@@ -243,8 +244,8 @@ public class ModelServices {
 		
 		final StringWriter w = new StringWriter();
 
-		final ControlFlowGraph cfg = b.extractControlFlowGraph(r.getPath().resolve(p.getId()).resolve(b.getId().toString()),
-				entryPoint.startsWith("0x") ? Long.parseLong(entryPoint.substring(2), 16) : Long.parseLong(entryPoint));
+		b.load(r.getPath().resolve(p.getId()).resolve(b.getId().toString()));
+		final ControlFlowGraph cfg = b.extractControlFlowGraph(entryPoint.startsWith("0x") ? Long.parseLong(entryPoint.substring(2), 16) : Long.parseLong(entryPoint));
 		if (cfg != null) {
 			final JsonGenerator.Builder g = new JsonGenerator.Builder();
 			write(g, cfg);
