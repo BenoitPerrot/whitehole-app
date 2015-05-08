@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.util.Map.Entry;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -51,6 +52,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import org.whitehole.app.model.Binary;
 import org.whitehole.app.model.Project;
 import org.whitehole.app.model.Repository;
 import org.whitehole.app.model.Workspace;
@@ -133,7 +135,7 @@ public class ModelServices {
 
 		final StringWriter w = new StringWriter();
 		final JsonWriter jw = new JsonWriter(w);
-		jw.writeObject(p.toJson(r.getPath().resolve(p.getId()).resolve(p.getBinaryId().toString())));
+		jw.writeObject(p.toJson(r.getPath().resolve(p.getId())));
 		jw.close();
 		return w.toString();
 	}
@@ -155,7 +157,8 @@ public class ModelServices {
 		final Project p = ws.getProjectById(projectId);
 		if (p == null) throw new WebApplicationException("Binary could not be created.", 500);
 
-		final String binaryId = p.newBinary(binaryName);
+		final Binary b = p.newBinary(UUID.randomUUID(), binaryName);
+		final String binaryId = "\"" + b.getId().toString() + "\"";
 		
 		// <<
 		r.save(p);
@@ -219,9 +222,12 @@ public class ModelServices {
 		final Project p = ws.getProjectById(projectId);
 		if (p == null) throw new WebApplicationException("No such project.", 404);
 		
+		final Binary b = p.getBinaries().values().iterator().next();
+		if (b == null) throw new WebApplicationException("No such binary.", 404);
+		
 		final StringWriter w = new StringWriter();
 
-		final ControlFlowGraph cfg = p.extractControlFlowGraph(r.getPath().resolve(p.getId()).resolve(p.getBinaryId().toString()),
+		final ControlFlowGraph cfg = b.extractControlFlowGraph(r.getPath().resolve(p.getId()).resolve(b.getId().toString()),
 				entryPoint.startsWith("0x") ? Long.parseLong(entryPoint.substring(2), 16) : Long.parseLong(entryPoint));
 		if (cfg != null) {
 			final JsonGenerator.Builder g = new JsonGenerator.Builder();

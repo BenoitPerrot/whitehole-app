@@ -30,12 +30,19 @@ public class Repository {
 	
 	public void save(Project p) throws JsonException, IOException {
 		try (final JsonGenerator g = new JsonGenerator.Writer(new FileWriter(_path.resolve(p.getId()).resolve("description.json").toFile()))) {
-			g.writeStartObject()
+			g
+			.writeStartObject()
 			.  write("id", p.getId())
 			.  write("name", p.getName())
-			.  writeStartObject("binary")
-			.    write("id", p.getBinaryId().toString())
-			.    write("name", p.getBinaryName())
+			.  writeStartArray("binaries");
+			p.getBinaries().forEach((id, binary) -> {
+				g
+				.writeStartObject()
+				.  write("id", id.toString())
+				.  write("name", binary.getName())
+				.writeEnd();
+			});
+			g
 			.  writeEnd()
 			.writeEnd();
 		}
@@ -47,13 +54,18 @@ public class Repository {
 			final String id = o.getString("id").toString();
 			final String name = o.getString("name").toString();
 			
-			final JsonObject bin = o.getObject("binary");
-			final UUID binaryId = UUID.fromString(bin.getString("id").toString());
-			final String binaryName = bin.getString("name").toString();
+			final HashMap<UUID, Binary> binaries = new HashMap<>();
+			for (final JsonValue x : o.getArray("binaries")) {
+				final JsonObject bin = (JsonObject) x;
+				
+				final UUID binaryId = UUID.fromString(bin.getString("id").toString());
+				final String binaryName = bin.getString("name").toString();
+				final Binary b = new Binary(binaryId, binaryName);
+				
+				binaries.put(b.getId(), b);
+			}
 			
-			return new Project(id, name)
-				.setBinaryId(binaryId)
-				.setBinaryName(binaryName);
+			return new Project(id, name, binaries);
 		}
 	}
 	

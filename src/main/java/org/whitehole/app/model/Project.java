@@ -30,26 +30,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.whitehole.app.model;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.Set;
 import java.util.UUID;
 
-import org.whitehole.apps.JsonBuilder;
-import org.whitehole.assembly.ia32_x64.control.CallGraphExplorer;
-import org.whitehole.assembly.ia32_x64.control.ControlFlowGraph;
-import org.whitehole.assembly.ia32_x64.dis.Disassembler;
-import org.whitehole.binary.pe.Image;
-import org.whitehole.binary.pe.SectionHeader;
-import org.whitehole.infra.io.LargeByteBuffer;
-import org.whitehole.infra.json.JsonArray;
-import org.whitehole.infra.json.JsonNumber;
+import org.whitehole.infra.json.JsonGenerator;
 import org.whitehole.infra.json.JsonObject;
 import org.whitehole.infra.json.JsonObjectBuilder;
 
@@ -67,132 +52,56 @@ public class Project {
 		return _name;
 	}
 	
-	private UUID _binaryId;
+	private HashMap<UUID, Binary> _binaries;
 	
-	public Project setBinaryId(UUID binaryId) {
-		_binaryId = binaryId;
-		return this;
-	}
-
-	public UUID getBinaryId() {
-		return _binaryId;
+	public HashMap<UUID, Binary> getBinaries() {
+		return _binaries;
 	}
 	
-	private String _binaryName;
-	
-	public Project setBinaryName(String binaryName) {
-		_binaryName = binaryName;
-		return this;
-	}
-
-	public String getBinaryName() {
-		return _binaryName;
-	}
-
 	public Project(String id, String name) {
+		this(id, name, new HashMap<>());
+	}
+
+	public Project(String id, String name, HashMap<UUID, Binary> binaries) {
 		_id = id;
 		_name = name;
-	}
-
-	public String newBinary(String binaryName) throws IOException {
-		_binaryId = UUID.randomUUID();
-		_binaryName = binaryName;
-		return "\"" + _binaryId.toString() + "\"";
+		_binaries = binaries;
 	}
 
 	public JsonObject toBriefJson() {
-		final JsonObjectBuilder b = new JsonObjectBuilder()
-			.add("id", _id)
-			.add("name", _name);
-		if (_binaryId != null)
-			b.add("binaryId", _binaryId.toString());
-		return b.build();
+		try (final JsonGenerator.Builder g = new JsonGenerator.Builder()) {
+			g
+			.writeStartObject()
+			.  write("id", _id)
+			.  write("name", _name);
+			
+			if (!_binaries.isEmpty()) {
+				final Binary first = _binaries.values().iterator().next();
+				g.write("binaryId", first.getId().toString());
+			}
+			
+			g
+			.writeEnd();
+			return (JsonObject) g.get();
+		}
 	}
 
 	public JsonObject toJson(Path path) {
 		final JsonObjectBuilder b = new JsonObjectBuilder();
 		b.add("id", _id);
 		b.add("name", _name);
-		b.add("binaryId", _binaryId.toString());
-
-		try {
-			final JsonObjectBuilder pe = new JsonObjectBuilder();
-			pe.add("pe", JsonBuilder.toJson(new JsonObjectBuilder(), loadImage(path)));
-
-			b.add("content", pe);
-			
-			final JsonArray entryPoints = new JsonArray();
-			extractEntryPoints(path).stream().forEach(p -> entryPoints.add(new JsonNumber(new BigDecimal(p))));
-			b.add("entryPoints", entryPoints);
-		}
-		catch (Exception x) {
-		}
+		
+		final Binary first = _binaries.values().iterator().next();
+		b.add("binaryId", first.getId().toString());
+		first.toJson(b, path.resolve(first.getId().toString()));
 
 		return b.build();
 	}
-
-	// FIXME: move to some kind of container for Binaries
-	// <<
-	private HashMap<Long, ControlFlowGraph> _entryPointToControlFlowGraph;
 	
-	private Project exploreBinary(Path path) throws Exception {
-		if (_entryPointToControlFlowGraph == null) {
-			_entryPointToControlFlowGraph = new HashMap<>();
-
-			final Image lpe = loadImage(path);
-			final ByteBuffer buffer = loadByteBuffer(path);
-
-			final long entryPointRVA = lpe.getAddressOfEntryPoint().longValue();
-			// Entry point (relative to image base): Long.toHexString(entryPointRVA))
-			// Entry point (absolute): Long.toHexString(entryPointRVA + imageBase))
-
-			// ep relative to imgb
-			// h.getVA relative to imgb
-			final SectionHeader sh = lpe.findSectionHeaderByRVA(entryPointRVA);
-			if (sh != null) {
-
-				// final long vma = imageBase + sh.getVirtualAddress().toBigInteger().longValue();
-				// Logger.getAnonymousLogger().info("Entry point in section '" + Explorer.getName(sh) + "' starting at VMA 0x" + Long.toHexString(vma));
-
-				CallGraphExplorer.explore(new Disassembler(lpe.isPE32x() ? Disassembler.WorkingMode._64BIT : Disassembler.WorkingMode._32BIT), buffer, Image.computeRVAToOffset(sh) + entryPointRVA,
-						_entryPointToControlFlowGraph);
-			}
-		}
-		return this;
+	public Binary newBinary(UUID id, String name) {
+		final Binary b = new Binary(id, name);
+		_binaries.put(id, b);
+		return b;
 	}
-	
-	public Set<Long> extractEntryPoints(Path path) throws Exception {
-		return exploreBinary(path)._entryPointToControlFlowGraph.keySet();
-	}
-	
-	public ControlFlowGraph extractControlFlowGraph(Path path, long entryPoint) throws Exception {
-		return exploreBinary(path)._entryPointToControlFlowGraph.get(entryPoint);
-	}
-
-	private Image _lpe;
-
-	public Image loadImage(Path path) throws IOException {
-		return loadBinary(path)._lpe;
-	}
-
-	private ByteBuffer _b;
-
-	public ByteBuffer loadByteBuffer(Path path) throws IOException {
-		return loadBinary(path)._b;
-	}
-
-	private Project loadBinary(Path path) throws IOException {
-		if (_lpe == null || _b == null) { // Same
-			final File f = path.toFile();
-			final FileInputStream fi = new FileInputStream(f);
-			//
-			_b = fi.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, f.length());
-			_lpe = Image.load(new LargeByteBuffer(_b), 0);
-			//
-			fi.close();
-		}
-		return this;
-	}
-	// >>
 	
 }
