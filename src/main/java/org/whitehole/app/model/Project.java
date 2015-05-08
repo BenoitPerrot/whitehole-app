@@ -30,12 +30,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.whitehole.app.model;
 
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.UUID;
-
-import org.whitehole.infra.json.JsonObject;
-import org.whitehole.infra.json.JsonObjectBuilder;
 
 public class Project {
 
@@ -67,18 +63,6 @@ public class Project {
 		_binaries = binaries;
 	}
 
-	public JsonObject toJson(Path path) {
-		final JsonObjectBuilder b = new JsonObjectBuilder();
-		b.add("id", _id);
-		b.add("name", _name);
-		
-		final Binary first = _binaries.values().iterator().next();
-		b.add("binaryId", first.getId().toString());
-		first.toJson(b, path.resolve(first.getId().toString()));
-
-		return b.build();
-	}
-	
 	public Binary newBinary(UUID id, String name) {
 		final Binary b = new Binary(id, name);
 		_binaries.put(id, b);

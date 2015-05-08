@@ -20,6 +20,7 @@ import org.whitehole.binary.pe.SectionHeader;
 import org.whitehole.infra.io.LargeByteBuffer;
 import org.whitehole.infra.json.JsonArray;
 import org.whitehole.infra.json.JsonNumber;
+import org.whitehole.infra.json.JsonObject;
 import org.whitehole.infra.json.JsonObjectBuilder;
 
 public class Binary {
@@ -104,20 +105,19 @@ public class Binary {
 		return this;
 	}
 
-	public JsonObjectBuilder toJson(JsonObjectBuilder b, Path path) {
+	public JsonObject toJson(JsonObject o, Path path) {
 		try {
 			final JsonObjectBuilder pe = new JsonObjectBuilder();
 			pe.add("pe", JsonBuilder.toJson(new JsonObjectBuilder(), loadImage(path)));
-			b.add("content", pe);
+			o.put("content", pe.build());
 
 			final JsonArray entryPoints = new JsonArray();
 			extractEntryPoints(path).stream().forEach(p -> entryPoints.add(new JsonNumber(new BigDecimal(p))));
-			b.add("entryPoints", entryPoints);
+			o.put("entryPoints", entryPoints);
 		}
 		catch (Exception x) {
 		}
-
-		return b;
+		return o;
 	}
 
 }

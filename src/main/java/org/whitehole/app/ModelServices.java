@@ -66,6 +66,8 @@ import org.whitehole.assembly.ia32_x64.dom.Mnemonic;
 import org.whitehole.assembly.ia32_x64.dom.Operand;
 import org.whitehole.infra.json.JsonException;
 import org.whitehole.infra.json.JsonGenerator;
+import org.whitehole.infra.json.JsonObject;
+import org.whitehole.infra.json.JsonString;
 import org.whitehole.infra.json.JsonWriter;
 
 @Path("/")
@@ -139,7 +141,17 @@ public class ModelServices {
 
 		final StringWriter w = new StringWriter();
 		final JsonWriter jw = new JsonWriter(w);
-		jw.writeObject(p.toJson(r.getPath().resolve(p.getId())));
+		
+		final java.nio.file.Path path = r.getPath().resolve(p.getId());
+		JsonObject x = new JsonObject();
+		x.put("id", new JsonString(p.getId()));
+		x.put("name", new JsonString(p.getName()));
+
+		final Binary first = p.getBinaries().values().iterator().next();
+		x.put("binaryId", new JsonString(first.getId().toString()));
+		first.toJson(x, path.resolve(first.getId().toString()));
+
+		jw.writeObject(x);
 		jw.close();
 		return w.toString();
 	}
