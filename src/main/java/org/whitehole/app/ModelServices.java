@@ -32,6 +32,7 @@ package org.whitehole.app;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.file.Files;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,6 +52,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import org.whitehole.app.model.Project;
+import org.whitehole.app.model.Repository;
 import org.whitehole.app.model.Workspace;
 import org.whitehole.apps.objdump.assembly.ia32_x64.IntelStringWriter;
 import org.whitehole.assembly.ia32_x64.control.BasicBlock;
@@ -91,11 +93,19 @@ public class ModelServices {
 			@Context ServletContext context,
 			@QueryParam("name") String name) throws Exception {
 
+		final Repository r = (Repository) context.getAttribute("repository");
+		if (r == null) throw new WebApplicationException("No repository.", 500);
+
 		final Workspace ws = (Workspace) context.getAttribute("workspace");
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 		
 		final Project p = ws.newProject(name);
 		if (p == null) throw new WebApplicationException("Project could not be created.", 500);
+
+		// <<
+		Files.createDirectory(r.getPath().resolve(p.getId()));
+		r.save(ws);
+		// >>
 
 		final StringWriter w = new StringWriter();
 		final JsonWriter jw = new JsonWriter(w);
@@ -112,6 +122,9 @@ public class ModelServices {
 			@PathParam("projectId") String projectId,
 			@Context HttpServletResponse response) throws Exception {
 
+		final Repository r = (Repository) context.getAttribute("repository");
+		if (r == null) throw new WebApplicationException("No repository.", 500);
+		
 		final Workspace ws = (Workspace) context.getAttribute("workspace");
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 
@@ -120,7 +133,7 @@ public class ModelServices {
 
 		final StringWriter w = new StringWriter();
 		final JsonWriter jw = new JsonWriter(w);
-		jw.writeObject(p.toJson());
+		jw.writeObject(p.toJson(r.getPath().resolve(p.getId()).resolve(p.getBinaryId().toString())));
 		jw.close();
 		return w.toString();
 	}
@@ -133,13 +146,22 @@ public class ModelServices {
 			@PathParam("projectId") String projectId,
 			@QueryParam("name") String binaryName) throws Exception {
 
+		final Repository r = (Repository) context.getAttribute("repository");
+		if (r == null) throw new WebApplicationException("No repository.", 500);
+		
 		final Workspace ws = (Workspace) context.getAttribute("workspace");
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 		
 		final Project p = ws.getProjectById(projectId);
 		if (p == null) throw new WebApplicationException("Binary could not be created.", 500);
 
-		return p.newBinary(binaryName);
+		final String binaryId = p.newBinary(binaryName);
+		
+		// <<
+		r.save(p);
+		// >>
+		
+		return binaryId;
 	}
 
 	private static final Pattern contentRangePattern = Pattern.compile("bytes (\\d+)-(\\d+)/(\\d+)");
@@ -150,14 +172,17 @@ public class ModelServices {
 	public String uploadResource(
 			@Context ServletContext context,
 			@PathParam("projectId") String projectId,
-			@QueryParam("id") String binaryId,
+			@QueryParam("id") String resourceId,
 			@HeaderParam("Content-Range") String range,
 			@Context HttpServletRequest request) throws Exception {
 
-		final Workspace r = (Workspace) context.getAttribute("workspace");
-		if (r == null) throw new WebApplicationException("No workspace.", 500);
+		final Repository r = (Repository) context.getAttribute("repository");
+		if (r == null) throw new WebApplicationException("No repository.", 500);
+
+		final Workspace ws = (Workspace) context.getAttribute("workspace");
+		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 		
-		final Project p = r.getProjectById(projectId);
+		final Project p = ws.getProjectById(projectId);
 		if (p == null) throw new WebApplicationException("No such project.", 404);
 
 		final Matcher m = contentRangePattern.matcher(range);
@@ -165,7 +190,11 @@ public class ModelServices {
 		final String start = m.group(1);
 		// final String end = m.group(2);
 		final String length = m.group(3);
-		p.uploadResource(binaryId, Long.parseLong(start), Long.parseLong(length), request.getInputStream());
+
+		// <<
+		r.uploadResource(r.getPath().resolve(projectId).resolve(resourceId),
+				Long.parseLong(start), Long.parseLong(length), request.getInputStream());
+		// >>
 		
 		return "";
 	}
@@ -181,15 +210,19 @@ public class ModelServices {
 
 		if (entryPoint == null) throw new WebApplicationException("An entryPoint is required.", 400);
 
+		final Repository r = (Repository) context.getAttribute("repository");
+		if (r == null) throw new WebApplicationException("No repository.", 500);
+		
 		final Workspace ws = (Workspace) context.getAttribute("workspace");
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 
 		final Project p = ws.getProjectById(projectId);
 		if (p == null) throw new WebApplicationException("No such project.", 404);
-
+		
 		final StringWriter w = new StringWriter();
 
-		final ControlFlowGraph cfg = p.extractControlFlowGraph(entryPoint.startsWith("0x") ? Long.parseLong(entryPoint.substring(2), 16) : Long.parseLong(entryPoint));
+		final ControlFlowGraph cfg = p.extractControlFlowGraph(r.getPath().resolve(p.getId()).resolve(p.getBinaryId().toString()),
+				entryPoint.startsWith("0x") ? Long.parseLong(entryPoint.substring(2), 16) : Long.parseLong(entryPoint));
 		if (cfg != null) {
 			final JsonGenerator.Builder g = new JsonGenerator.Builder();
 			write(g, cfg);

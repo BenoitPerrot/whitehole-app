@@ -33,8 +33,6 @@ package org.whitehole.app.model;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.RandomAccessFile;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -62,8 +60,6 @@ public class Project {
 	public String getId() {
 		return _id;
 	}
-	
-	private final Path _path;
 	
 	private final String _name;
 	
@@ -93,18 +89,14 @@ public class Project {
 		return _binaryName;
 	}
 
-	public Project(Path path, String id, String name) {
+	public Project(String id, String name) {
 		_id = id;
-		_path = path;
 		_name = name;
 	}
 
 	public String newBinary(String binaryName) throws IOException {
 		_binaryId = UUID.randomUUID();
 		_binaryName = binaryName;
-		// <<
-		Repository.save(_path, this);
-		// >>
 		return "\"" + _binaryId.toString() + "\"";
 	}
 
@@ -117,7 +109,7 @@ public class Project {
 		return b.build();
 	}
 
-	public JsonObject toJson() {
+	public JsonObject toJson(Path path) {
 		final JsonObjectBuilder b = new JsonObjectBuilder();
 		b.add("id", _id);
 		b.add("name", _name);
@@ -125,12 +117,12 @@ public class Project {
 
 		try {
 			final JsonObjectBuilder pe = new JsonObjectBuilder();
-			pe.add("pe", JsonBuilder.toJson(new JsonObjectBuilder(), loadImage()));
+			pe.add("pe", JsonBuilder.toJson(new JsonObjectBuilder(), loadImage(path)));
 
 			b.add("content", pe);
 			
 			final JsonArray entryPoints = new JsonArray();
-			extractEntryPoints().stream().forEach(p -> entryPoints.add(new JsonNumber(new BigDecimal(p))));
+			extractEntryPoints(path).stream().forEach(p -> entryPoints.add(new JsonNumber(new BigDecimal(p))));
 			b.add("entryPoints", entryPoints);
 		}
 		catch (Exception x) {
@@ -143,12 +135,12 @@ public class Project {
 	// <<
 	private HashMap<Long, ControlFlowGraph> _entryPointToControlFlowGraph;
 	
-	private Project exploreBinary() throws Exception {
+	private Project exploreBinary(Path path) throws Exception {
 		if (_entryPointToControlFlowGraph == null) {
 			_entryPointToControlFlowGraph = new HashMap<>();
 
-			final Image lpe = loadImage();
-			final ByteBuffer buffer = loadByteBuffer();
+			final Image lpe = loadImage(path);
+			final ByteBuffer buffer = loadByteBuffer(path);
 
 			final long entryPointRVA = lpe.getAddressOfEntryPoint().longValue();
 			// Entry point (relative to image base): Long.toHexString(entryPointRVA))
@@ -169,77 +161,38 @@ public class Project {
 		return this;
 	}
 	
-	public Set<Long> extractEntryPoints() throws Exception {
-		return exploreBinary()._entryPointToControlFlowGraph.keySet();
+	public Set<Long> extractEntryPoints(Path path) throws Exception {
+		return exploreBinary(path)._entryPointToControlFlowGraph.keySet();
 	}
 	
-	public ControlFlowGraph extractControlFlowGraph(long entryPoint) throws Exception {
-		return exploreBinary()._entryPointToControlFlowGraph.get(entryPoint);
+	public ControlFlowGraph extractControlFlowGraph(Path path, long entryPoint) throws Exception {
+		return exploreBinary(path)._entryPointToControlFlowGraph.get(entryPoint);
 	}
 
 	private Image _lpe;
 
-	public Image loadImage() throws IOException {
-		return loadBinary()._lpe;
+	public Image loadImage(Path path) throws IOException {
+		return loadBinary(path)._lpe;
 	}
 
 	private ByteBuffer _b;
 
-	public ByteBuffer loadByteBuffer() throws IOException {
-		return loadBinary()._b;
+	public ByteBuffer loadByteBuffer(Path path) throws IOException {
+		return loadBinary(path)._b;
 	}
 
-	private Project loadBinary() throws IOException {
+	private Project loadBinary(Path path) throws IOException {
 		if (_lpe == null || _b == null) { // Same
-			final File f = _path.resolve(_binaryId.toString()).toFile();
+			final File f = path.toFile();
 			final FileInputStream fi = new FileInputStream(f);
+			//
 			_b = fi.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, f.length());
 			_lpe = Image.load(new LargeByteBuffer(_b), 0);
+			//
 			fi.close();
 		}
 		return this;
 	}
 	// >>
-
-	public void uploadResource(String resourceId, long offset, Long totalLength, InputStream input) throws IOException {
-
-		// Dump content at specified range
-		final File f = _path.resolve(resourceId).toFile();
-		try (final RandomAccessFile output = new RandomAccessFile(f, "rw")) {
-
-			// if (totalLength != null)
-			//     // Reserve area
-			//     output.setLength(totalLength);
-
-			// Dump stream at specified offset
-			{
-				final byte[] buffer = new byte[8192];
-				int n;
-				while ((n = input.read(buffer)) != -1) {
-					output.seek(offset);
-					output.write(buffer, 0, n);
-					offset += n;
-				}
-			}
-
-			// <<
-			System.err.println("TODO: check range, remove sleep()");
-			try {
-				Thread.sleep(1000);
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-			}
-			// >>
-		}
-		
-		// Check end
-		if (totalLength == null || offset == totalLength) {// FIXME: check for file upload completion more correctly
-		}
-	}
-
-	//
-	//
-	//
 	
 }

@@ -31,8 +31,6 @@
 package org.whitehole.app.model;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -43,16 +41,13 @@ import org.whitehole.infra.json.JsonArrayBuilder;
 
 public class Workspace {
 	
-	private final Path _path;
-	
 	private final HashMap<String, Project> _projects;
 	
 	public Stream<Entry<String, Project>> getProjects() {
 		return _projects.entrySet().stream();
 	}
 	
-	public Workspace(Path path, HashMap<String, Project> projects) throws Exception {
-		_path = path;
+	public Workspace(HashMap<String, Project> projects) throws Exception {
 		_projects = projects;
 	}
 	
@@ -64,15 +59,8 @@ public class Workspace {
 
 		final String id = UUID.randomUUID().toString();
 		
-		final Path path = _path.resolve(id.toString());
-		Files.createDirectory(path);
-		
-		final Project p = new Project(path, id, name);
+		final Project p = new Project(id, name);
 		_projects.put(id, p);
-
-		// Save index <<
-		Repository.save(_path, this);
-		// >>
 		
 		return p;
 	}

@@ -75,7 +75,9 @@ public class Main {
 		wac.setContextPath("/");
 		wac.setParentLoaderPriority(true);
 		
-		wac.setAttribute("workspace", Repository.loadWorkspace(Paths.get(args.repositoryPath)));
+		final Repository r = new Repository(Paths.get(args.repositoryPath));
+		wac.setAttribute("repository", r);
+		wac.setAttribute("workspace", r.loadWorkspace());
 
 		server.setHandler(wac);
 
