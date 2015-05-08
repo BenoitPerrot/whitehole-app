@@ -59,12 +59,12 @@ ul#projects li {
 onload = (function () {
 
 	const b = new DOM.Builder(document.getElementById('projects'));
-	function addProjectBriefDOM(projectBrief) {
+	function addProjectDOM(p) {
 		b
 			.startElement('li', {'class': 'card'})
 			.startElement('h2')
-			.startElement('a', { 'href': '/org/whitehole/pages/project.html?id=' + projectBrief.id })
-			.addText(projectBrief.name)
+			.startElement('a', { 'href': '/org/whitehole/pages/project.html?id=' + p.id })
+			.addText(p.name)
 			.end()
 			.end()
 			.end();
@@ -75,17 +75,17 @@ onload = (function () {
 	const newProjectDOM = document.querySelector('wh-new-project');
 
 	newProjectDOM.addEventListener('accepted', function (e) {
- 		cl.newProject(e.detail.name).then(function (projectBrief) {
-			addProjectBriefDOM(projectBrief);
+ 		cl.newProject(e.detail.name).then(function (p) {
+			addProjectDOM(p);
 			
-			cl.addBinaryToProject(projectBrief.id, e.detail.file, function (progress) {
+			cl.addBinaryToProject(p.id, e.detail.file, function (progress) {
 				console.log(progress)
 			});
 		});
 	});
 	
-	cl.getProjectBriefs().then(function (projectBriefs) {
-		projectBriefs.forEach(addProjectBriefDOM);
+	cl.getProjects().then(function (projects) {
+		projects.forEach(addProjectDOM);
 	});
 
 })</script>

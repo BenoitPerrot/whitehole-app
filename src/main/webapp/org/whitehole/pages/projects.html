@@ -24,12 +24,12 @@
 	
 	fetch('/api/projects')
 		.then(function (r) { return r.json(); })
-		.then(function (projectBriefs) {
+		.then(function (projects) {
 			new DOM.Builder(document.getElementById('projects'))
-				.forEach(projectBriefs, function (projectBrief) {
+				.forEach(projects, function (p) {
 					this.startElement('li')
-					.startElement('a', {'href': '/org/whitehole/pages/project.html?id=' + projectBrief.id})
-					.addText(projectBrief.name)
+					.startElement('a', {'href': '/org/whitehole/pages/project.html?id=' + p.id})
+					.addText(p.name)
 					.end()
 					.end();
 				});

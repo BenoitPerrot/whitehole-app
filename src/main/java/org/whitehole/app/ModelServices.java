@@ -76,7 +76,7 @@ public class ModelServices {
 	@GET
 	@Path("/projects")
 	@Produces(MediaType.TEXT_PLAIN)
-	public String getProjectsBriefs(
+	public String getProjects(
 			@Context ServletContext context,
 			@Context HttpServletResponse response) throws IOException {
 
@@ -125,7 +125,7 @@ public class ModelServices {
 	@GET
 	@Path("/projects/{projectId}")
 	@Produces(MediaType.TEXT_PLAIN)
-	public String getProjectStructure(
+	public String getProject(
 			@Context ServletContext context,
 			@PathParam("projectId") String projectId,
 			@Context HttpServletResponse response) throws Exception {

@@ -41,7 +41,7 @@ const Client = (function () {
 				.then(function (r) { return r.json(); });
 		}
 		
-		getProjectBriefs() {
+		getProjects() {
 			return this.fetchJSON('projects');
 		}
 		
