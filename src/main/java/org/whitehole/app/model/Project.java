@@ -32,8 +32,6 @@ package org.whitehole.app.model;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
@@ -53,11 +51,9 @@ import org.whitehole.binary.pe.Image;
 import org.whitehole.binary.pe.SectionHeader;
 import org.whitehole.infra.io.LargeByteBuffer;
 import org.whitehole.infra.json.JsonArray;
-import org.whitehole.infra.json.JsonGenerator;
 import org.whitehole.infra.json.JsonNumber;
 import org.whitehole.infra.json.JsonObject;
 import org.whitehole.infra.json.JsonObjectBuilder;
-import org.whitehole.infra.json.JsonReader;
 
 public class Project {
 
@@ -76,7 +72,26 @@ public class Project {
 	}
 	
 	private UUID _binaryId;
+	
+	public Project setBinaryId(UUID binaryId) {
+		_binaryId = binaryId;
+		return this;
+	}
+
+	public UUID getBinaryId() {
+		return _binaryId;
+	}
+	
 	private String _binaryName;
+	
+	public Project setBinaryName(String binaryName) {
+		_binaryName = binaryName;
+		return this;
+	}
+
+	public String getBinaryName() {
+		return _binaryName;
+	}
 
 	public Project(Path path, String id, String name) {
 		_id = id;
@@ -88,9 +103,7 @@ public class Project {
 		_binaryId = UUID.randomUUID();
 		_binaryName = binaryName;
 		// <<
-		try (final JsonGenerator g = new JsonGenerator.Writer(new FileWriter(_path.resolve("description.json").toFile()))) {
-			write(g, this);
-		}
+		Repository.save(_path, this);
 		// >>
 		return "\"" + _binaryId.toString() + "\"";
 	}
@@ -229,32 +242,4 @@ public class Project {
 	//
 	//
 	
-	public static void write(JsonGenerator g, Project p) {
-		g.writeStartObject()
-		.  write("id", p._id)
-		.  write("name", p._name)
-		.  writeStartObject("binary")
-		.    write("id", p._binaryId.toString())
-		.    write("name", p._binaryName)
-		.  writeEnd()
-		.writeEnd();
-	}
-
-	public static Project load(Path path) throws Exception {
-		try (final JsonReader r = new JsonReader(new FileReader(path.toFile()))) {
-			final JsonObject o = r.readObject();
-			final String id = o.getString("id").toString();
-			final String name = o.getString("name").toString();
-			
-			final JsonObject bin = o.getObject("binary");
-			final UUID binaryId = UUID.fromString(bin.getString("id").toString());
-			final String binaryName = bin.getString("name").toString();
-			
-			final Project p = new Project(path.getParent(), id, name);
-			p._binaryId = binaryId;
-			p._binaryName = binaryName;
-			
-			return p;
-		}
-	}
 }

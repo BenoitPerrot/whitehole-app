@@ -30,8 +30,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.whitehole.app.model;
 
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,36 +40,20 @@ import java.util.stream.Stream;
 
 import org.whitehole.infra.json.JsonArray;
 import org.whitehole.infra.json.JsonArrayBuilder;
-import org.whitehole.infra.json.JsonException;
-import org.whitehole.infra.json.JsonGenerator;
-import org.whitehole.infra.json.JsonObject;
-import org.whitehole.infra.json.JsonReader;
-import org.whitehole.infra.json.JsonValue;
 
 public class Workspace {
 	
 	private final Path _path;
 	
-	public Path getPath() {
-		return _path;
-	}
-	
-	private final HashMap<String, Project> _projects = new HashMap<>();
+	private final HashMap<String, Project> _projects;
 	
 	public Stream<Entry<String, Project>> getProjects() {
 		return _projects.entrySet().stream();
 	}
 	
-	public Workspace(Path path) throws Exception {
+	public Workspace(Path path, HashMap<String, Project> projects) throws Exception {
 		_path = path;
-
-		// Create directories
-		Files.createDirectories(path);
-		
-		// Load index if any <<
-		final Path indexPath = path.resolve("index.json");
-		if (Files.exists(indexPath))
-			load(indexPath);
+		_projects = projects;
 	}
 	
 	//
@@ -89,7 +71,7 @@ public class Workspace {
 		_projects.put(id, p);
 
 		// Save index <<
-		save(_path.resolve("index.json"));
+		Repository.save(_path, this);
 		// >>
 		
 		return p;
@@ -107,29 +89,4 @@ public class Workspace {
 		return _projects.get(id);
 	}
 	
-	//
-	//
-	//
-
-	private Workspace load(Path indexPath) throws Exception {
-		try (final JsonReader r = new JsonReader(new FileReader(indexPath.toFile()))) {
-			final JsonObject o = r.readObject();
-			for (final JsonValue id : o.getArray("projects"))
-				_projects.put(id.toString(), Project.load(indexPath.getParent().resolve(id.toString()).resolve("description.json")));
-		}
-		return this;
-	}
-	
-	private Workspace save(Path indexPath) throws JsonException, IOException {
-		try (final JsonGenerator g = new JsonGenerator.Writer(new FileWriter(indexPath.toFile()))) {
-			g.writeStartObject();
-			g.writeStartArray("projects");
-			_projects.forEach((id, p) -> {
-				g.write(id);
-			});
-			g.writeEnd();
-			g.writeEnd();
-		}
-		return this;
-	}
 }

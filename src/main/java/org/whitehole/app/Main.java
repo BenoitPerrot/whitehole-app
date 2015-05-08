@@ -34,7 +34,7 @@ import java.nio.file.Paths;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.whitehole.app.model.Workspace;
+import org.whitehole.app.model.Repository;
 
 public class Main {
 
@@ -74,7 +74,8 @@ public class Main {
 		wac.setResourceBase(webappDirLocation);
 		wac.setContextPath("/");
 		wac.setParentLoaderPriority(true);
-		wac.setAttribute("workspace", new Workspace(Paths.get(args.repositoryPath)));
+		
+		wac.setAttribute("workspace", Repository.loadWorkspace(Paths.get(args.repositoryPath)));
 
 		server.setHandler(wac);
 
