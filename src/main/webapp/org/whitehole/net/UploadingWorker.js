@@ -28,46 +28,46 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-const Client = (function () {
+
+//
+// (Large) file uploading , meant to be run from within a web worker.
+
+function upload(url, data, options) {
 	'use strict';
 	
-	return class Client {
-		constructor(base) {
-			this.base = base || '';
-		}
+	const type = options.type || 'POST';
+	const chunkSize = options.chunkSize || 1024 * 1024;
+	
+	let start = 0, end = chunkSize, size = data.size, hasFailed = false;
+	
+	function progressed() {
+		postMessage({type: 'progressed', detail: { start: start, end: end, size: size }});
+	}
+	
+	function failed() {
+		hasFailed = true;
+		postMessage({type: 'failed', detail: {}});
+	}
+	
+	while (start < size && !hasFailed) {
+		const xhr = new XMLHttpRequest();
+		xhr.addEventListener('load', progressed);
+		xhr.addEventListener('error', failed);
+		xhr.open(type, url, false); // CRUCIAL: be synchronous to progress correctly, it is fine as running in a worker
+		xhr.overrideMimeType('application/octet-stream');
+		xhr.setRequestHeader('Content-Range', 'bytes ' + start + '-' + end + '/' + size);
+		xhr.send(data.slice(start, end));
 		
-		fetchJSON(uri, options) {
-			return fetch(this.base + '/api/' + uri, options)
-				.then(function (r) { return r.json(); });
-		}
-		
-		getProjectBriefs() {
-			return this.fetchJSON('projects');
-		}
-		
-		newProject(name) {
-			return this.fetchJSON('projects/new?name=' + name, {method: 'POST'});
-		}
-		
-		addBinaryToProject(projectId, file, progresscb) {
-			const base = this.base;
-			return this.fetchJSON('projects/' + projectId + '/newBinary?name=' + encodeURIComponent(file.name), {method: 'POST'})
-				.then(function (binaryId) {
-					debugger;
-					return new Uploader().upload(
-						base + '/api/projects/' + projectId + '/uploadResource?id=' + binaryId,
-						file,
-						{ chunkSize: 50 * 1024 },
-						progresscb);
-				});
-		}
-		
-		getProject(projectId) {
-			return this.fetchJSON('projects/' + projectId);
-		}
-		
-		getControlFlowGraph(projectId, entryPoint) {
-			return this.fetchJSON('projects/' + projectId + '/controlFlowGraph?entryPoint=' + entryPoint);
-		}
-	};
-} ());
+		start = end;
+		end = start + chunkSize;
+		if (size < end)
+			end = size;
+	}
+
+	if (!hasFailed)
+		postMessage({type: 'uploaded' });
+};
+
+self.addEventListener('message', function(e) {
+	upload(e.data.url, e.data.data, e.data.options);
+});

@@ -33,10 +33,14 @@ package org.whitehole.app;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -136,6 +140,34 @@ public class ModelServices {
 		if (p == null) throw new WebApplicationException("Binary could not be created.", 500);
 
 		return p.newBinary(binaryName);
+	}
+
+	private static final Pattern contentRangePattern = Pattern.compile("bytes (\\d+)-(\\d+)/(\\d+)");
+	
+	@POST
+	@Path("/projects/{projectId}/uploadResource")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String uploadResource(
+			@Context ServletContext context,
+			@PathParam("projectId") String projectId,
+			@QueryParam("id") String binaryId,
+			@HeaderParam("Content-Range") String range,
+			@Context HttpServletRequest request) throws Exception {
+
+		final Workspace r = (Workspace) context.getAttribute("workspace");
+		if (r == null) throw new WebApplicationException("No workspace.", 500);
+		
+		final Project p = r.getProjectById(projectId);
+		if (p == null) throw new WebApplicationException("No such project.", 404);
+
+		final Matcher m = contentRangePattern.matcher(range);
+		m.matches();
+		final String start = m.group(1);
+		// final String end = m.group(2);
+		final String length = m.group(3);
+		p.uploadResource(binaryId, Long.parseLong(start), Long.parseLong(length), request.getInputStream());
+		
+		return "";
 	}
 
 	@GET

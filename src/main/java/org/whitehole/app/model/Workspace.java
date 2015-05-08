@@ -85,7 +85,7 @@ public class Workspace {
 		final Path path = _path.resolve(id.toString());
 		Files.createDirectory(path);
 		
-		final Project p = new Project(id, name);
+		final Project p = new Project(path, id, name);
 		_projects.put(id, p);
 
 		// Save index <<

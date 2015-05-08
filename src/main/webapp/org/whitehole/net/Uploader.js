@@ -28,46 +28,36 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-const Client = (function () {
+
+const Uploader = (function () {
 	'use strict';
 	
-	return class Client {
-		constructor(base) {
-			this.base = base || '';
-		}
-		
-		fetchJSON(uri, options) {
-			return fetch(this.base + '/api/' + uri, options)
-				.then(function (r) { return r.json(); });
-		}
-		
-		getProjectBriefs() {
-			return this.fetchJSON('projects');
-		}
-		
-		newProject(name) {
-			return this.fetchJSON('projects/new?name=' + name, {method: 'POST'});
-		}
-		
-		addBinaryToProject(projectId, file, progresscb) {
-			const base = this.base;
-			return this.fetchJSON('projects/' + projectId + '/newBinary?name=' + encodeURIComponent(file.name), {method: 'POST'})
-				.then(function (binaryId) {
-					debugger;
-					return new Uploader().upload(
-						base + '/api/projects/' + projectId + '/uploadResource?id=' + binaryId,
-						file,
-						{ chunkSize: 50 * 1024 },
-						progresscb);
+	return class {
+		upload(url, data, options, progresscb) {
+			return new Promise(function (resolve, reject) {
+			/*
+			if (size <= chunkSize) {
+			var fr = new FileReader();
+			fr.onloadend = function (y) {
+				xhr('PUT', url, y) ...
+			};
+			fr.readAsArrayBuffer(data);
+			}
+			*/
+				// TODO: use a pool (do not reuse the same worker without removing the listener)
+				const w = new Worker('/org/whitehole/net/UploadingWorker.js');
+				w.addEventListener('message', function (e) {
+					if (e.data.type === 'progressed') {
+						if (progresscb)
+							progresscb(e.data.detail);
+					}
+					else if (e.data.type === 'uploaded')
+						resolve();
+					else if (e.data.type === 'error')
+						reject(); // TODO: reason
 				});
-		}
-		
-		getProject(projectId) {
-			return this.fetchJSON('projects/' + projectId);
-		}
-		
-		getControlFlowGraph(projectId, entryPoint) {
-			return this.fetchJSON('projects/' + projectId + '/controlFlowGraph?entryPoint=' + entryPoint);
+				w.postMessage({ url: url, data: data, options: options || {} });
+			});
 		}
 	};
 } ());

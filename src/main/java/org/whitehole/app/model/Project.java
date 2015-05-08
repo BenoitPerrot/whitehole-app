@@ -33,7 +33,10 @@ package org.whitehole.app.model;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -64,45 +67,48 @@ public class Project {
 		return _id;
 	}
 	
+	private final Path _path;
+	
 	private final String _name;
 	
 	public String getName() {
 		return _name;
 	}
 	
-	private String _binaryPath = "";
+	private UUID _binaryId;
+	private String _binaryName;
 
-	public String getBinaryPath() {
-		return _binaryPath;
-	}
-	
-	public Project setBinaryPath(String binaryPath) {
-		_binaryPath = binaryPath.replace("\\", "/");
-		return this;
-	}
-
-	public Project(String id, String name) {
+	public Project(Path path, String id, String name) {
 		_id = id;
+		_path = path;
 		_name = name;
 	}
 
 	public String newBinary(String binaryName) throws IOException {
-		return "\"" + UUID.randomUUID().toString() + "\"";
+		_binaryId = UUID.randomUUID();
+		_binaryName = binaryName;
+		// <<
+		try (final JsonGenerator g = new JsonGenerator.Writer(new FileWriter(_path.resolve("description.json").toFile()))) {
+			write(g, this);
+		}
+		// >>
+		return "\"" + _binaryId.toString() + "\"";
 	}
 
 	public JsonObject toBriefJson() {
-		return new JsonObjectBuilder()
-				.add("id", _id)
-				.add("name", _name)
-				.add("binaryPath", _binaryPath)
-				.build();
+		final JsonObjectBuilder b = new JsonObjectBuilder()
+			.add("id", _id)
+			.add("name", _name);
+		if (_binaryId != null)
+			b.add("binaryId", _binaryId.toString());
+		return b.build();
 	}
 
 	public JsonObject toJson() {
 		final JsonObjectBuilder b = new JsonObjectBuilder();
 		b.add("id", _id);
 		b.add("name", _name);
-		b.add("binaryPath", _binaryPath);
+		b.add("binaryId", _binaryId.toString());
 
 		try {
 			final JsonObjectBuilder pe = new JsonObjectBuilder();
@@ -172,7 +178,7 @@ public class Project {
 
 	private Project loadBinary() throws IOException {
 		if (_lpe == null || _b == null) { // Same
-			final File f = new File(_binaryPath);
+			final File f = _path.resolve(_binaryId.toString()).toFile();
 			final FileInputStream fi = new FileInputStream(f);
 			_b = fi.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, f.length());
 			_lpe = Image.load(new LargeByteBuffer(_b), 0);
@@ -182,16 +188,56 @@ public class Project {
 	}
 	// >>
 
+	public void uploadResource(String resourceId, long offset, Long totalLength, InputStream input) throws IOException {
+
+		// Dump content at specified range
+		final File f = _path.resolve(resourceId).toFile();
+		try (final RandomAccessFile output = new RandomAccessFile(f, "rw")) {
+
+			// if (totalLength != null)
+			//     // Reserve area
+			//     output.setLength(totalLength);
+
+			// Dump stream at specified offset
+			{
+				final byte[] buffer = new byte[8192];
+				int n;
+				while ((n = input.read(buffer)) != -1) {
+					output.seek(offset);
+					output.write(buffer, 0, n);
+					offset += n;
+				}
+			}
+
+			// <<
+			System.err.println("TODO: check range, remove sleep()");
+			try {
+				Thread.sleep(1000);
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+			// >>
+		}
+		
+		// Check end
+		if (totalLength == null || offset == totalLength) {// FIXME: check for file upload completion more correctly
+		}
+	}
+
 	//
 	//
 	//
 	
 	public static void write(JsonGenerator g, Project p) {
-		g.writeStartObject();
-		g.write("id", p._id);
-		g.write("name", p._name);
-		g.write("binaryPath", p._binaryPath);
-		g.writeEnd();
+		g.writeStartObject()
+		.  write("id", p._id)
+		.  write("name", p._name)
+		.  writeStartObject("binary")
+		.    write("id", p._binaryId.toString())
+		.    write("name", p._binaryName)
+		.  writeEnd()
+		.writeEnd();
 	}
 
 	public static Project load(Path path) throws Exception {
@@ -199,8 +245,16 @@ public class Project {
 			final JsonObject o = r.readObject();
 			final String id = o.getString("id").toString();
 			final String name = o.getString("name").toString();
-			final String binaryPath = o.getString("binaryPath").toString();
-			return new Project(id, name).setBinaryPath(binaryPath);
+			
+			final JsonObject bin = o.getObject("binary");
+			final UUID binaryId = UUID.fromString(bin.getString("id").toString());
+			final String binaryName = bin.getString("name").toString();
+			
+			final Project p = new Project(path.getParent(), id, name);
+			p._binaryId = binaryId;
+			p._binaryName = binaryName;
+			
+			return p;
 		}
 	}
 }
