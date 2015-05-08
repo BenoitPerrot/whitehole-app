@@ -28,23 +28,28 @@ public class Repository {
 		_path = path;
 	}
 	
-	public void save(Project p) throws JsonException, IOException {
-		try (final JsonGenerator g = new JsonGenerator.Writer(new FileWriter(_path.resolve(p.getId()).resolve("description.json").toFile()))) {
+	public static JsonGenerator write(JsonGenerator g, Project p) {
+		g
+		.writeStartObject()
+		.  write("id", p.getId())
+		.  write("name", p.getName())
+		.  writeStartArray("binaries");
+		p.getBinaries().forEach((id, binary) -> {
 			g
 			.writeStartObject()
-			.  write("id", p.getId())
-			.  write("name", p.getName())
-			.  writeStartArray("binaries");
-			p.getBinaries().forEach((id, binary) -> {
-				g
-				.writeStartObject()
-				.  write("id", id.toString())
-				.  write("name", binary.getName())
-				.writeEnd();
-			});
-			g
-			.  writeEnd()
+			.  write("id", id.toString())
+			.  write("name", binary.getName())
 			.writeEnd();
+		});
+		g
+		.  writeEnd()
+		.writeEnd();
+		return g;
+	}
+	
+	public void save(Project p) throws JsonException, IOException {
+		try (final JsonGenerator g = new JsonGenerator.Writer(new FileWriter(_path.resolve(p.getId()).resolve("description.json").toFile()))) {
+			write(g, p);
 		}
 	}
 

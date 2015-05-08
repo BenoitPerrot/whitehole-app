@@ -34,7 +34,6 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.UUID;
 
-import org.whitehole.infra.json.JsonGenerator;
 import org.whitehole.infra.json.JsonObject;
 import org.whitehole.infra.json.JsonObjectBuilder;
 
@@ -66,24 +65,6 @@ public class Project {
 		_id = id;
 		_name = name;
 		_binaries = binaries;
-	}
-
-	public JsonObject toBriefJson() {
-		try (final JsonGenerator.Builder g = new JsonGenerator.Builder()) {
-			g
-			.writeStartObject()
-			.  write("id", _id)
-			.  write("name", _name);
-			
-			if (!_binaries.isEmpty()) {
-				final Binary first = _binaries.values().iterator().next();
-				g.write("binaryId", first.getId().toString());
-			}
-			
-			g
-			.writeEnd();
-			return (JsonObject) g.get();
-		}
 	}
 
 	public JsonObject toJson(Path path) {

@@ -36,9 +36,6 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import org.whitehole.infra.json.JsonArray;
-import org.whitehole.infra.json.JsonArrayBuilder;
-
 public class Workspace {
 	
 	private final HashMap<String, Project> _projects;
@@ -63,14 +60,6 @@ public class Workspace {
 		_projects.put(id, p);
 		
 		return p;
-	}
-	
-	public JsonArray getProjectBriefs() {
-		final JsonArrayBuilder a = new JsonArrayBuilder();
-		_projects.forEach((id, p) -> {
-			a.add(p.toBriefJson());
-		});
-		return a.build();
 	}
 	
 	public Project getProjectById(String id) {

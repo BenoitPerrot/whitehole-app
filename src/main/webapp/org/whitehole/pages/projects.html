@@ -29,7 +29,7 @@
 				.forEach(projectBriefs, function (projectBrief) {
 					this.startElement('li')
 					.startElement('a', {'href': '/org/whitehole/pages/project.html?id=' + projectBrief.id})
-					.addText(projectBrief.binaryPath)
+					.addText(projectBrief.name)
 					.end()
 					.end();
 				});

@@ -82,9 +82,13 @@ public class ModelServices {
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 
 		final StringWriter w = new StringWriter();
-		final JsonWriter jw = new JsonWriter(w);
-		jw.write(ws.getProjectBriefs());
-		jw.close();
+		try (final JsonGenerator.Writer g = new JsonGenerator.Writer(w)) {
+			g.writeStartArray();
+			ws.getProjects().forEach(e -> {
+				Repository.write(g, e.getValue());
+			});
+			g.writeEnd();
+		}
 		return w.toString();
 	}
 	
@@ -110,9 +114,9 @@ public class ModelServices {
 		// >>
 
 		final StringWriter w = new StringWriter();
-		final JsonWriter jw = new JsonWriter(w);
-		jw.write(p.toBriefJson());
-		jw.close();
+		try (final JsonGenerator.Writer g = new JsonGenerator.Writer(w)) {
+			Repository.write(g, p);
+		}
 		return w.toString();
 	}
 
