@@ -87,8 +87,12 @@ public class ModelServices {
 		final StringWriter w = new StringWriter();
 		try (final JsonGenerator.Writer g = new JsonGenerator.Writer(w)) {
 			g.writeStartArray();
-			ws.getProjects().forEach(e -> {
-				Repository.write(g, e.getValue());
+			ws.getProjects().forEach(p -> {
+				g
+				.writeStartObject()
+				.  write("id", p.getId().toString())
+				.  write("name", p.getName())
+				.writeEnd();
 			});
 			g.writeEnd();
 		}
@@ -132,7 +136,7 @@ public class ModelServices {
 		final Workspace ws = r.loadWorkspace();
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 
-		final Project p = ws.getProjectById(UUID.fromString(projectId));
+		final Project p = ws.getProjectById(UUID.fromString(projectId)).obtain();
 		if (p == null) throw new WebApplicationException("No such project.", 404);
 
 		final StringWriter w = new StringWriter();
@@ -140,7 +144,7 @@ public class ModelServices {
 		
 		final java.nio.file.Path path = r.getPath().resolve(projectId);
 		JsonObject x = new JsonObject();
-		x.put("id", new JsonString(p.getId().toString()));
+		x.put("id", new JsonString(projectId.toString()));
 		x.put("name", new JsonString(p.getName()));
 
 		final Binary first = p.getBinaries().values().iterator().next();
@@ -167,7 +171,7 @@ public class ModelServices {
 		final Workspace ws = r.loadWorkspace();
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 		
-		final Project p = ws.getProjectById(UUID.fromString(projectId));
+		final Project p = ws.getProjectById(UUID.fromString(projectId)).obtain();
 		if (p == null) throw new WebApplicationException("Binary could not be created.", 500);
 
 		final Binary b = new Binary(UUID.randomUUID(), binaryName);
@@ -199,7 +203,7 @@ public class ModelServices {
 		final Workspace ws = r.loadWorkspace();
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 		
-		final Project p = ws.getProjectById(UUID.fromString(projectId));
+		final Project p = ws.getProjectById(UUID.fromString(projectId)).obtain();
 		if (p == null) throw new WebApplicationException("No such project.", 404);
 
 		final Matcher m = contentRangePattern.matcher(range);
@@ -233,7 +237,7 @@ public class ModelServices {
 		final Workspace ws = r.loadWorkspace();
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 
-		final Project p = ws.getProjectById(UUID.fromString(projectId));
+		final Project p = ws.getProjectById(UUID.fromString(projectId)).obtain();
 		if (p == null) throw new WebApplicationException("No such project.", 404);
 		
 		final Binary b = p.getBinaries().values().iterator().next();
@@ -241,7 +245,7 @@ public class ModelServices {
 		
 		final StringWriter w = new StringWriter();
 
-		b.load(r.getPath().resolve(p.getId().toString()).resolve(b.getId().toString()));
+		b.load(r.getPath().resolve(projectId.toString()).resolve(b.getId().toString()));
 		final ControlFlowGraph cfg = b.extractControlFlowGraph(entryPoint.startsWith("0x") ? Long.parseLong(entryPoint.substring(2), 16) : Long.parseLong(entryPoint));
 		if (cfg != null) {
 			final JsonGenerator.Builder g = new JsonGenerator.Builder();

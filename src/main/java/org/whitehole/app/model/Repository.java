@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.UUID;
 
 import org.whitehole.infra.json.JsonException;
@@ -54,10 +53,10 @@ public class Repository {
 		}
 	}
 
-	public Project loadProject(Path path) throws Exception {
-		try (final JsonReader r = new JsonReader(new FileReader(path.resolve("description.json").toFile()))) {
+	public Project loadProject(UUID id) throws Exception {
+		try (final JsonReader r = new JsonReader(new FileReader(_path.resolve(id.toString()).resolve("description.json").toFile()))) {
 			final JsonObject o = r.readObject();
-			final UUID id = UUID.fromString(o.getString("id").toString());
+			// assert (id == UUID.fromString(o.getString("id").toString()));
 			final String name = o.getString("name").toString();
 			final Project p = new Project(id, name);
 			
@@ -77,7 +76,7 @@ public class Repository {
 	
 	public Project newProject(Workspace ws, String name) throws IOException {
 		final Project p = new Project(UUID.randomUUID(), name);
-		ws.addProject(p);
+		ws.addProject(new FutureProject(this, p));
 
 		Files.createDirectory(getPath().resolve(p.getId().toString()));
 		save(ws);
@@ -125,8 +124,8 @@ public class Repository {
 		try (final JsonGenerator g = new JsonGenerator.Writer(new FileWriter(_path.resolve("index.json").toFile()))) {
 			g.writeStartObject();
 			g.writeStartArray("projects");
-			workspace.getProjects().forEach(e -> {
-				g.write(e.getKey().toString());
+			workspace.getProjects().forEach(p -> {
+				g.write(p.getId().toString());
 			});
 			g.writeEnd();
 			g.writeEnd();
@@ -140,12 +139,15 @@ public class Repository {
 		if (_workspace == null)
 			try (final JsonReader r = new JsonReader(new FileReader(_path.resolve("index.json").toFile()))) {
 				final JsonObject o = r.readObject();
-			
-				final HashMap<UUID, Project> nameToProject = new HashMap<>();
-				for (final JsonValue id : o.getArray("projects"))
-					nameToProject.put(UUID.fromString(id.toString()), loadProject(_path.resolve(id.toString())));
-			
-				_workspace = new Workspace(nameToProject);
+
+				_workspace = new Workspace();
+
+				for (final JsonValue v : o.getArray("projects")) {
+					final JsonObject p = (JsonObject) v;
+					final UUID id = UUID.fromString(p.get("id").toString());
+					final String name = p.get("name").toString();
+					_workspace.addProject(new FutureProject(this, id, name));
+				}
 			}
 		return _workspace;
 	}

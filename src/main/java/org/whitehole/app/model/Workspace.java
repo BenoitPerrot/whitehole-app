@@ -31,27 +31,25 @@
 package org.whitehole.app.model;
 
 import java.util.HashMap;
-import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 public class Workspace {
 	
-	private final HashMap<UUID, Project> _projects;
+	private final HashMap<UUID, FutureProject> _projects = new HashMap<>();
 	
-	public Stream<Entry<UUID, Project>> getProjects() {
-		return _projects.entrySet().stream();
+	public Stream<FutureProject> getProjects() {
+		return _projects.values().stream();
 	}
 	
-	public Workspace(HashMap<UUID, Project> projects) throws Exception {
-		_projects = projects;
+	public Workspace() throws Exception {
 	}
 	
-	public Project getProjectById(UUID id) {
+	public FutureProject getProjectById(UUID id) {
 		return _projects.get(id);
 	}
 
-	public Workspace addProject(Project p) {
+	public Workspace addProject(FutureProject p) {
 		_projects.put(p.getId(), p);
 		return this;
 	}
