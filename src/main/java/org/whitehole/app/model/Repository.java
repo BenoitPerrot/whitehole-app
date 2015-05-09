@@ -123,15 +123,19 @@ public class Repository {
 		return workspace;
 	}
 
+	private Workspace _workspace;
+
 	public Workspace loadWorkspace() throws Exception {
-		try (final JsonReader r = new JsonReader(new FileReader(_path.resolve("index.json").toFile()))) {
-			final JsonObject o = r.readObject();
+		if (_workspace == null)
+			try (final JsonReader r = new JsonReader(new FileReader(_path.resolve("index.json").toFile()))) {
+				final JsonObject o = r.readObject();
 			
-			final HashMap<String, Project> nameToProject = new HashMap<>();
-			for (final JsonValue id : o.getArray("projects"))
-				nameToProject.put(id.toString(), loadProject(_path.resolve(id.toString())));
+				final HashMap<String, Project> nameToProject = new HashMap<>();
+				for (final JsonValue id : o.getArray("projects"))
+					nameToProject.put(id.toString(), loadProject(_path.resolve(id.toString())));
 			
-			return new Workspace(nameToProject);
-		}
+				_workspace = new Workspace(nameToProject);
+			}
+		return _workspace;
 	}
 }

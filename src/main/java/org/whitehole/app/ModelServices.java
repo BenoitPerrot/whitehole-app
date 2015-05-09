@@ -30,7 +30,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.whitehole.app;
 
-import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.util.Map.Entry;
@@ -78,9 +77,12 @@ public class ModelServices {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getProjects(
 			@Context ServletContext context,
-			@Context HttpServletResponse response) throws IOException {
+			@Context HttpServletResponse response) throws Exception {
 
-		final Workspace ws = (Workspace) context.getAttribute("workspace");
+		final Repository r = (Repository) context.getAttribute("repository");
+		if (r == null) throw new WebApplicationException("No repository.", 500);
+		
+		final Workspace ws = r.loadWorkspace();
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 
 		final StringWriter w = new StringWriter();
@@ -104,7 +106,7 @@ public class ModelServices {
 		final Repository r = (Repository) context.getAttribute("repository");
 		if (r == null) throw new WebApplicationException("No repository.", 500);
 
-		final Workspace ws = (Workspace) context.getAttribute("workspace");
+		final Workspace ws = r.loadWorkspace();
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 		
 		final Project p = ws.newProject(name);
@@ -133,7 +135,7 @@ public class ModelServices {
 		final Repository r = (Repository) context.getAttribute("repository");
 		if (r == null) throw new WebApplicationException("No repository.", 500);
 		
-		final Workspace ws = (Workspace) context.getAttribute("workspace");
+		final Workspace ws = r.loadWorkspace();
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 
 		final Project p = ws.getProjectById(projectId);
@@ -168,7 +170,7 @@ public class ModelServices {
 		final Repository r = (Repository) context.getAttribute("repository");
 		if (r == null) throw new WebApplicationException("No repository.", 500);
 		
-		final Workspace ws = (Workspace) context.getAttribute("workspace");
+		final Workspace ws = r.loadWorkspace();
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 		
 		final Project p = ws.getProjectById(projectId);
@@ -200,7 +202,7 @@ public class ModelServices {
 		final Repository r = (Repository) context.getAttribute("repository");
 		if (r == null) throw new WebApplicationException("No repository.", 500);
 
-		final Workspace ws = (Workspace) context.getAttribute("workspace");
+		final Workspace ws = r.loadWorkspace();
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 		
 		final Project p = ws.getProjectById(projectId);
@@ -234,7 +236,7 @@ public class ModelServices {
 		final Repository r = (Repository) context.getAttribute("repository");
 		if (r == null) throw new WebApplicationException("No repository.", 500);
 		
-		final Workspace ws = (Workspace) context.getAttribute("workspace");
+		final Workspace ws = r.loadWorkspace();
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 
 		final Project p = ws.getProjectById(projectId);

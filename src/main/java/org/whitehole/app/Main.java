@@ -77,7 +77,6 @@ public class Main {
 		
 		final Repository r = new Repository(Paths.get(args.repositoryPath));
 		wac.setAttribute("repository", r);
-		wac.setAttribute("workspace", r.loadWorkspace());
 
 		server.setHandler(wac);
 
