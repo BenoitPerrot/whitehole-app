@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.UUID;
@@ -74,6 +75,16 @@ public class Repository {
 		}
 	}
 	
+	public Project newProject(Workspace ws, String name) throws IOException {
+		final Project p = new Project(UUID.randomUUID().toString(), name);
+		ws.addProject(p);
+
+		Files.createDirectory(getPath().resolve(p.getId()));
+		save(ws);
+
+		return p;
+	}
+
 	public void uploadResource(Path path, long offset, Long totalLength, InputStream input) throws IOException {
 
 		// Dump content at specified range

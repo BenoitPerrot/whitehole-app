@@ -31,7 +31,6 @@
 package org.whitehole.app;
 
 import java.io.StringWriter;
-import java.nio.file.Files;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -109,13 +108,8 @@ public class ModelServices {
 		final Workspace ws = r.loadWorkspace();
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 		
-		final Project p = ws.newProject(name);
+		final Project p = r.newProject(ws, name);
 		if (p == null) throw new WebApplicationException("Project could not be created.", 500);
-
-		// <<
-		Files.createDirectory(r.getPath().resolve(p.getId()));
-		r.save(ws);
-		// >>
 
 		final StringWriter w = new StringWriter();
 		try (final JsonGenerator.Writer g = new JsonGenerator.Writer(w)) {

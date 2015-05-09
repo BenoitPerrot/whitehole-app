@@ -30,10 +30,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.whitehole.app.model;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
-import java.util.UUID;
 import java.util.stream.Stream;
 
 public class Workspace {
@@ -48,22 +46,13 @@ public class Workspace {
 		_projects = projects;
 	}
 	
-	//
-	//
-	//
-	
-	public Project newProject(String name) throws IOException {
-
-		final String id = UUID.randomUUID().toString();
-		
-		final Project p = new Project(id, name);
-		_projects.put(id, p);
-		
-		return p;
-	}
-	
 	public Project getProjectById(String id) {
 		return _projects.get(id);
+	}
+
+	public Workspace addProject(Project p) {
+		_projects.put(p.getId(), p);
+		return this;
 	}
 	
 }
