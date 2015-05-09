@@ -174,7 +174,8 @@ public class ModelServices {
 		final Project p = ws.getProjectById(projectId);
 		if (p == null) throw new WebApplicationException("Binary could not be created.", 500);
 
-		final Binary b = p.newBinary(UUID.randomUUID(), binaryName);
+		final Binary b = new Binary(UUID.randomUUID(), binaryName);
+		p.addBinary(b);
 		final String binaryId = "\"" + b.getId().toString() + "\"";
 		
 		// <<

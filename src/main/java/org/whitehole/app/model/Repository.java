@@ -58,8 +58,8 @@ public class Repository {
 			final JsonObject o = r.readObject();
 			final String id = o.getString("id").toString();
 			final String name = o.getString("name").toString();
+			final Project p = new Project(id, name);
 			
-			final HashMap<UUID, Binary> binaries = new HashMap<>();
 			for (final JsonValue x : o.getArray("binaries")) {
 				final JsonObject bin = (JsonObject) x;
 				
@@ -67,10 +67,10 @@ public class Repository {
 				final String binaryName = bin.getString("name").toString();
 				final Binary b = new Binary(binaryId, binaryName);
 				
-				binaries.put(b.getId(), b);
+				p.addBinary(b);
 			}
 			
-			return new Project(id, name, binaries);
+			return p;
 		}
 	}
 	

@@ -63,10 +63,9 @@ public class Project {
 		_binaries = binaries;
 	}
 
-	public Binary newBinary(UUID id, String name) {
-		final Binary b = new Binary(id, name);
-		_binaries.put(id, b);
-		return b;
+	public Project addBinary(Binary b) {
+		_binaries.put(b.getId(), b);
+		return this;
 	}
 	
 }
