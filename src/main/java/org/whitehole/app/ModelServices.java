@@ -51,6 +51,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import org.whitehole.app.model.Binary;
+import org.whitehole.app.model.FutureBinary;
 import org.whitehole.app.model.Project;
 import org.whitehole.app.model.Repository;
 import org.whitehole.app.model.Workspace;
@@ -142,16 +143,14 @@ public class ModelServices {
 		final StringWriter w = new StringWriter();
 		final JsonWriter jw = new JsonWriter(w);
 		
-		final java.nio.file.Path path = r.getPath().resolve(projectId);
 		JsonObject x = new JsonObject();
 		x.put("id", new JsonString(projectId.toString()));
 		x.put("name", new JsonString(p.getName()));
-
-		final Binary first = p.getBinaries().values().iterator().next();
+		// <<
+		final Binary first = p.getBinaries().values().iterator().next().obtain();
 		x.put("binaryId", new JsonString(first.getId().toString()));
-		first.load(path.resolve(first.getId().toString()));
 		first.toJson(x);
-
+		// >>
 		jw.writeObject(x);
 		jw.close();
 		return w.toString();
@@ -172,17 +171,12 @@ public class ModelServices {
 		if (ws == null) throw new WebApplicationException("No workspace.", 500);
 		
 		final Project p = ws.getProjectById(UUID.fromString(projectId)).obtain();
-		if (p == null) throw new WebApplicationException("Binary could not be created.", 500);
+		if (p == null) throw new WebApplicationException("Project could not be created.", 500);
 
-		final Binary b = new Binary(UUID.randomUUID(), binaryName);
-		p.addBinary(b);
-		final String binaryId = "\"" + b.getId().toString() + "\"";
-		
-		// <<
-		r.save(p);
-		// >>
-		
-		return binaryId;
+		final FutureBinary b = r.newBinary(p, binaryName);
+		if (b == null) throw new WebApplicationException("Binary could not be created.", 500);
+
+		return "\"" + b.getId().toString() + "\"";
 	}
 
 	private static final Pattern contentRangePattern = Pattern.compile("bytes (\\d+)-(\\d+)/(\\d+)");
@@ -240,12 +234,11 @@ public class ModelServices {
 		final Project p = ws.getProjectById(UUID.fromString(projectId)).obtain();
 		if (p == null) throw new WebApplicationException("No such project.", 404);
 		
-		final Binary b = p.getBinaries().values().iterator().next();
+		final Binary b = p.getBinaries().values().iterator().next().obtain();
 		if (b == null) throw new WebApplicationException("No such binary.", 404);
 		
 		final StringWriter w = new StringWriter();
 
-		b.load(r.getPath().resolve(projectId.toString()).resolve(b.getId().toString()));
 		final ControlFlowGraph cfg = b.extractControlFlowGraph(entryPoint.startsWith("0x") ? Long.parseLong(entryPoint.substring(2), 16) : Long.parseLong(entryPoint));
 		if (cfg != null) {
 			final JsonGenerator.Builder g = new JsonGenerator.Builder();

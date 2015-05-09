@@ -1,12 +1,7 @@
 package org.whitehole.app.model;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.UUID;
@@ -17,7 +12,6 @@ import org.whitehole.assembly.ia32_x64.control.ControlFlowGraph;
 import org.whitehole.assembly.ia32_x64.dis.Disassembler;
 import org.whitehole.binary.pe.Image;
 import org.whitehole.binary.pe.SectionHeader;
-import org.whitehole.infra.io.LargeByteBuffer;
 import org.whitehole.infra.json.JsonArray;
 import org.whitehole.infra.json.JsonNumber;
 import org.whitehole.infra.json.JsonObject;
@@ -37,9 +31,15 @@ public class Binary {
 		return _name;
 	}
 
-	public Binary(UUID id, String name) {
+	private ByteBuffer _b;
+
+	private Image _lpe;
+
+	public Binary(UUID id, String name, ByteBuffer b, Image lpe) {
 		_id = id;
 		_name = name;
+		_b = b;
+		_lpe = lpe;
 	}
 
 	// FIXME: move to some kind of container for Binaries
@@ -75,23 +75,6 @@ public class Binary {
 
 	public ControlFlowGraph extractControlFlowGraph(long entryPoint) throws Exception {
 		return explore()._entryPointToControlFlowGraph.get(entryPoint);
-	}
-
-	private Image _lpe;
-
-	private ByteBuffer _b;
-
-	public Binary load(Path path) throws IOException {
-		if (_lpe == null || _b == null) { // Same
-			final File f = path.toFile();
-			final FileInputStream fi = new FileInputStream(f);
-			//
-			_b = fi.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, f.length());
-			_lpe = Image.load(new LargeByteBuffer(_b), 0);
-			//
-			fi.close();
-		}
-		return this;
 	}
 
 	public JsonObject toJson(JsonObject o) {

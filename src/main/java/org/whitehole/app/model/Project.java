@@ -47,9 +47,9 @@ public class Project {
 		return _name;
 	}
 	
-	private HashMap<UUID, Binary> _binaries = new HashMap<>();
+	private HashMap<UUID, FutureBinary> _binaries = new HashMap<>();
 	
-	public HashMap<UUID, Binary> getBinaries() {
+	public HashMap<UUID, FutureBinary> getBinaries() {
 		return _binaries;
 	}
 	
@@ -58,7 +58,7 @@ public class Project {
 		_name = name;
 	}
 
-	public Project addBinary(Binary b) {
+	public Project addBinary(FutureBinary b) {
 		_binaries.put(b.getId(), b);
 		return this;
 	}

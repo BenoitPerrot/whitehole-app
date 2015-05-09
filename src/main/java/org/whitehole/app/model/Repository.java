@@ -1,14 +1,20 @@
 package org.whitehole.app.model;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
 
+import org.whitehole.binary.pe.Image;
+import org.whitehole.infra.io.LargeByteBuffer;
 import org.whitehole.infra.json.JsonException;
 import org.whitehole.infra.json.JsonGenerator;
 import org.whitehole.infra.json.JsonObject;
@@ -26,6 +32,27 @@ public class Repository {
 	
 	public Repository(Path path) {
 		_path = path;
+	}
+
+	public Binary loadBinary(UUID id, String name) throws Exception {
+		final File f = _path.resolve("binaries").resolve(id.toString()).toFile();
+		final FileInputStream fi = new FileInputStream(f);
+		//
+		final ByteBuffer b = fi.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, f.length());
+		final Image lpe = Image.load(new LargeByteBuffer(b), 0);
+		//
+		fi.close();
+
+		return new Binary(id, name, b, lpe);
+	}
+	
+	public FutureBinary newBinary(Project p, String name) throws IOException {
+		final FutureBinary b = new FutureBinary(this, UUID.randomUUID(), name);
+		p.addBinary(b);
+
+		save(p);
+		
+		return b;
 	}
 	
 	public static JsonGenerator write(JsonGenerator g, Project p) {
@@ -65,9 +92,7 @@ public class Repository {
 				
 				final UUID binaryId = UUID.fromString(bin.getString("id").toString());
 				final String binaryName = bin.getString("name").toString();
-				final Binary b = new Binary(binaryId, binaryName);
-				
-				p.addBinary(b);
+				p.addBinary(new FutureBinary(this, binaryId, binaryName));
 			}
 			
 			return p;
