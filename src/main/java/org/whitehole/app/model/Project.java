@@ -47,20 +47,15 @@ public class Project {
 		return _name;
 	}
 	
-	private HashMap<UUID, Binary> _binaries;
+	private HashMap<UUID, Binary> _binaries = new HashMap<>();
 	
 	public HashMap<UUID, Binary> getBinaries() {
 		return _binaries;
 	}
 	
 	public Project(String id, String name) {
-		this(id, name, new HashMap<>());
-	}
-
-	public Project(String id, String name, HashMap<UUID, Binary> binaries) {
 		_id = id;
 		_name = name;
-		_binaries = binaries;
 	}
 
 	public Project addBinary(Binary b) {
