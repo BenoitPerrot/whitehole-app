@@ -32,21 +32,22 @@ package org.whitehole.app.model;
 
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 public class Workspace {
 	
-	private final HashMap<String, Project> _projects;
+	private final HashMap<UUID, Project> _projects;
 	
-	public Stream<Entry<String, Project>> getProjects() {
+	public Stream<Entry<UUID, Project>> getProjects() {
 		return _projects.entrySet().stream();
 	}
 	
-	public Workspace(HashMap<String, Project> projects) throws Exception {
+	public Workspace(HashMap<UUID, Project> projects) throws Exception {
 		_projects = projects;
 	}
 	
-	public Project getProjectById(String id) {
+	public Project getProjectById(UUID id) {
 		return _projects.get(id);
 	}
 

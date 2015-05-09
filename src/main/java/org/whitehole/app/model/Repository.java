@@ -32,7 +32,7 @@ public class Repository {
 	public static JsonGenerator write(JsonGenerator g, Project p) {
 		g
 		.writeStartObject()
-		.  write("id", p.getId())
+		.  write("id", p.getId().toString())
 		.  write("name", p.getName())
 		.  writeStartArray("binaries");
 		p.getBinaries().forEach((id, binary) -> {
@@ -49,7 +49,7 @@ public class Repository {
 	}
 	
 	public void save(Project p) throws JsonException, IOException {
-		try (final JsonGenerator g = new JsonGenerator.Writer(new FileWriter(_path.resolve(p.getId()).resolve("description.json").toFile()))) {
+		try (final JsonGenerator g = new JsonGenerator.Writer(new FileWriter(_path.resolve(p.getId().toString()).resolve("description.json").toFile()))) {
 			write(g, p);
 		}
 	}
@@ -57,7 +57,7 @@ public class Repository {
 	public Project loadProject(Path path) throws Exception {
 		try (final JsonReader r = new JsonReader(new FileReader(path.resolve("description.json").toFile()))) {
 			final JsonObject o = r.readObject();
-			final String id = o.getString("id").toString();
+			final UUID id = UUID.fromString(o.getString("id").toString());
 			final String name = o.getString("name").toString();
 			final Project p = new Project(id, name);
 			
@@ -76,10 +76,10 @@ public class Repository {
 	}
 	
 	public Project newProject(Workspace ws, String name) throws IOException {
-		final Project p = new Project(UUID.randomUUID().toString(), name);
+		final Project p = new Project(UUID.randomUUID(), name);
 		ws.addProject(p);
 
-		Files.createDirectory(getPath().resolve(p.getId()));
+		Files.createDirectory(getPath().resolve(p.getId().toString()));
 		save(ws);
 
 		return p;
@@ -126,7 +126,7 @@ public class Repository {
 			g.writeStartObject();
 			g.writeStartArray("projects");
 			workspace.getProjects().forEach(e -> {
-				g.write(e.getKey());
+				g.write(e.getKey().toString());
 			});
 			g.writeEnd();
 			g.writeEnd();
@@ -141,9 +141,9 @@ public class Repository {
 			try (final JsonReader r = new JsonReader(new FileReader(_path.resolve("index.json").toFile()))) {
 				final JsonObject o = r.readObject();
 			
-				final HashMap<String, Project> nameToProject = new HashMap<>();
+				final HashMap<UUID, Project> nameToProject = new HashMap<>();
 				for (final JsonValue id : o.getArray("projects"))
-					nameToProject.put(id.toString(), loadProject(_path.resolve(id.toString())));
+					nameToProject.put(UUID.fromString(id.toString()), loadProject(_path.resolve(id.toString())));
 			
 				_workspace = new Workspace(nameToProject);
 			}

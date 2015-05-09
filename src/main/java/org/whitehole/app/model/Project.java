@@ -35,9 +35,9 @@ import java.util.UUID;
 
 public class Project {
 
-	private final String _id;
+	private final UUID _id;
 	
-	public String getId() {
+	public UUID getId() {
 		return _id;
 	}
 	
@@ -53,7 +53,7 @@ public class Project {
 		return _binaries;
 	}
 	
-	public Project(String id, String name) {
+	public Project(UUID id, String name) {
 		_id = id;
 		_name = name;
 	}
