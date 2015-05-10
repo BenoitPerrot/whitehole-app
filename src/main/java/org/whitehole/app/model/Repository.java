@@ -46,7 +46,7 @@ public class Repository {
 		return new Binary(id, name, b, lpe);
 	}
 	
-	public FutureBinary newBinary(Project p, String name) throws IOException {
+	public FutureBinary newBinary(Project p, String name) throws Exception {
 		final FutureBinary b = new FutureBinary(this, UUID.randomUUID(), name);
 		p.addBinary(b);
 
@@ -54,29 +54,10 @@ public class Repository {
 		
 		return b;
 	}
-	
-	public static JsonGenerator write(JsonGenerator g, Project p) {
-		g
-		.writeStartObject()
-		.  write("id", p.getId().toString())
-		.  write("name", p.getName())
-		.  writeStartArray("binaries");
-		p.getBinaries().forEach((id, binary) -> {
-			g
-			.writeStartObject()
-			.  write("id", id.toString())
-			.  write("name", binary.getName())
-			.writeEnd();
-		});
-		g
-		.  writeEnd()
-		.writeEnd();
-		return g;
-	}
-	
-	public void save(Project p) throws JsonException, IOException {
+
+	public void save(Project p) throws Exception {
 		try (final JsonGenerator g = new JsonGenerator.Writer(new FileWriter(_path.resolve(p.getId().toString()).resolve("description.json").toFile()))) {
-			write(g, p);
+			Json.write(g, p, false);
 		}
 	}
 

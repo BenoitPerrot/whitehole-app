@@ -31,7 +31,6 @@
 package org.whitehole.app;
 
 import java.io.StringWriter;
-import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,22 +51,12 @@ import javax.ws.rs.core.MediaType;
 
 import org.whitehole.app.model.Binary;
 import org.whitehole.app.model.FutureBinary;
+import org.whitehole.app.model.Json;
 import org.whitehole.app.model.Project;
 import org.whitehole.app.model.Repository;
 import org.whitehole.app.model.Workspace;
-import org.whitehole.apps.objdump.assembly.ia32_x64.IntelStringWriter;
-import org.whitehole.assembly.ia32_x64.control.BasicBlock;
 import org.whitehole.assembly.ia32_x64.control.ControlFlowGraph;
-import org.whitehole.assembly.ia32_x64.control.ControlFlowGraph.MotivatedBlock;
-import org.whitehole.assembly.ia32_x64.dom.Immediate;
-import org.whitehole.assembly.ia32_x64.dom.Instruction;
-import org.whitehole.assembly.ia32_x64.dom.Mnemonic;
-import org.whitehole.assembly.ia32_x64.dom.Operand;
-import org.whitehole.infra.json.JsonException;
 import org.whitehole.infra.json.JsonGenerator;
-import org.whitehole.infra.json.JsonObject;
-import org.whitehole.infra.json.JsonString;
-import org.whitehole.infra.json.JsonWriter;
 
 @Path("/")
 public class ModelServices {
@@ -87,15 +76,7 @@ public class ModelServices {
 
 		final StringWriter w = new StringWriter();
 		try (final JsonGenerator.Writer g = new JsonGenerator.Writer(w)) {
-			g.writeStartArray();
-			ws.getProjects().forEach(p -> {
-				g
-				.writeStartObject()
-				.  write("id", p.getId().toString())
-				.  write("name", p.getName())
-				.writeEnd();
-			});
-			g.writeEnd();
+			Json.write(g, ws);
 		}
 		return w.toString();
 	}
@@ -118,11 +99,11 @@ public class ModelServices {
 
 		final StringWriter w = new StringWriter();
 		try (final JsonGenerator.Writer g = new JsonGenerator.Writer(w)) {
-			Repository.write(g, p);
+			Json.write(g, p, false);
 		}
 		return w.toString();
 	}
-
+	
 	@GET
 	@Path("/projects/{projectId}")
 	@Produces(MediaType.TEXT_PLAIN)
@@ -141,18 +122,9 @@ public class ModelServices {
 		if (p == null) throw new WebApplicationException("No such project.", 404);
 
 		final StringWriter w = new StringWriter();
-		final JsonWriter jw = new JsonWriter(w);
-		
-		JsonObject x = new JsonObject();
-		x.put("id", new JsonString(projectId.toString()));
-		x.put("name", new JsonString(p.getName()));
-		// <<
-		final Binary first = p.getBinaries().values().iterator().next().obtain();
-		x.put("binaryId", new JsonString(first.getId().toString()));
-		first.toJson(x);
-		// >>
-		jw.writeObject(x);
-		jw.close();
+		try (final JsonGenerator.Writer g = new JsonGenerator.Writer(w)) {
+			Json.write(g, p, true);
+		}
 		return w.toString();
 	}
 
@@ -238,105 +210,13 @@ public class ModelServices {
 		if (b == null) throw new WebApplicationException("No such binary.", 404);
 		
 		final StringWriter w = new StringWriter();
-
 		final ControlFlowGraph cfg = b.extractControlFlowGraph(entryPoint.startsWith("0x") ? Long.parseLong(entryPoint.substring(2), 16) : Long.parseLong(entryPoint));
 		if (cfg != null) {
-			final JsonGenerator.Builder g = new JsonGenerator.Builder();
-			write(g, cfg);
-
-			final JsonWriter jw = new JsonWriter(w);
-			jw.write(g.get());
-			jw.close();
+			try (final JsonGenerator.Writer g = new JsonGenerator.Writer(w)) {
+				Json.write(g, cfg);
+			}
 		}
 		return w.toString();
-	}
-	
-	static void write(JsonGenerator g, Instruction i, long p) throws JsonException {
-		g.writeStartObject();
-
-		boolean written = false;
-		if (i.getMnemonic() == Mnemonic.CALL) {
-			if (i.getOperands().length == 1) {
-				final Operand o = i.getOperands()[0];
-				if (o instanceof Immediate) {
-					final Immediate imm = (Immediate) o;
-					final long addr = 5 /* i.getByteLength() */+ imm.getSignedInteger().intValue() /* FIXME: sign-extended long */+ p;
-					g.write("m", "call");
-					g.writeStartObject("o");
-//					final String name = null; // FIXME: find routine name by address
-//					if (name != null)
-//						g.write("name", name);
-					g.write("rva", "0x" + Long.toHexString(addr));
-					g.writeEnd();
-					written = true;
-				}
-//				else if (o instanceof SIBDAddress) {
-//					final SIBDAddress a = (SIBDAddress) o;
-//					if (a.getBase() == null && a.getIndex() == null && a.getDisplacement() != null) {
-//						final long addr = a.getDisplacement().longValue();
-//						final String name = null; // FIXME: find routine name by address
-//						if (name != null) {
-//							g.write("m", "call");
-//							g.writeStartArray("o");
-//							g.write("dll@" + name);
-//							g.writeEnd();
-//							written = true;
-//						}
-//					}
-//				}
-			}
-		}
-		
-		if (!written) {
-			g.write("m", IntelStringWriter.toString(i.getMnemonic()));
-			if (0 < i.getOperands().length) {
-				g.writeStartArray("o");
-				for (Operand o : i.getOperands()) {
-					final StringWriter sw = new StringWriter();
-					IntelStringWriter.OperandWriter ow = new IntelStringWriter.OperandWriter(sw, i.getMnemonic());
-					o.accept(ow);
-					g.write(sw.toString());
-				}
-				g.writeEnd();
-			}
-		}
-
-		g.writeEnd();
-	}
-
-	static JsonGenerator write(JsonGenerator g, ControlFlowGraph cfg) throws JsonException {
-
-		g.writeStartObject();
-
-		g.writeStartObject("basicBlocks");
-		for (final BasicBlock bb : cfg.getBasicBlocks()) {
-
-			g.writeStartObject("0x" + Long.toHexString(bb.getEntryPoint()));
-
-			g.writeStartArray("instructions");
-			for (final Entry<Long, Instruction> e : bb)
-				write(g, e.getValue(), e.getKey());
-			g.writeEnd();
-
-			if (cfg.hasOutcomingBlocks(bb)) {
-				g.writeStartArray("exits");
-				for (final MotivatedBlock m : cfg.getDestinationBlocks(bb)) {
-					final BasicBlock obb = m.getBlock();
-					g.writeStartObject();
-					g.write("point", "0x" + Long.toHexString(obb.getEntryPoint()));
-					g.write("reason", m.getReason().toString());
-					g.writeEnd();
-				}
-				g.writeEnd();
-			}
-
-			g.writeEnd();
-		}
-		g.writeEnd();
-
-		g.writeEnd();
-		
-		return g;
 	}
 
 }

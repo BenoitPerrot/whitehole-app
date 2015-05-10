@@ -1,21 +1,15 @@
 package org.whitehole.app.model;
 
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.UUID;
 
-import org.whitehole.apps.JsonBuilder;
 import org.whitehole.assembly.ia32_x64.control.CallGraphExplorer;
 import org.whitehole.assembly.ia32_x64.control.ControlFlowGraph;
 import org.whitehole.assembly.ia32_x64.dis.Disassembler;
 import org.whitehole.binary.pe.Image;
 import org.whitehole.binary.pe.SectionHeader;
-import org.whitehole.infra.json.JsonArray;
-import org.whitehole.infra.json.JsonNumber;
-import org.whitehole.infra.json.JsonObject;
-import org.whitehole.infra.json.JsonObjectBuilder;
 
 public class Binary {
 
@@ -34,6 +28,10 @@ public class Binary {
 	private ByteBuffer _b;
 
 	private Image _lpe;
+	
+	public Image getImage() {
+		return _lpe;
+	}
 
 	public Binary(UUID id, String name, ByteBuffer b, Image lpe) {
 		_id = id;
@@ -75,21 +73,6 @@ public class Binary {
 
 	public ControlFlowGraph extractControlFlowGraph(long entryPoint) throws Exception {
 		return explore()._entryPointToControlFlowGraph.get(entryPoint);
-	}
-
-	public JsonObject toJson(JsonObject o) {
-		try {
-			final JsonObjectBuilder pe = new JsonObjectBuilder();
-			pe.add("pe", JsonBuilder.toJson(new JsonObjectBuilder(), _lpe));
-			o.put("content", pe.build());
-
-			final JsonArray entryPoints = new JsonArray();
-			extractEntryPoints().stream().forEach(p -> entryPoints.add(new JsonNumber(new BigDecimal(p))));
-			o.put("entryPoints", entryPoints);
-		}
-		catch (Exception x) {
-		}
-		return o;
 	}
 
 }
